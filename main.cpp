@@ -55,9 +55,12 @@ int main( int argc, char** argv )
     Mat xoffsets, yoffsets, diff;
     Mat out[] = {xoffsets, yoffsets, diff};
     split(minDistImg, out);
-    imshow(result_window, out[2]);
-    imwrite("minDistImg.exr", out[2]);
 
+    normalize(out[0], out[0], 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
+    imwrite("xoffsets.exr", out[0]);
+    normalize(out[1], out[1], 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
+    imwrite("yoffsets.exr", out[1]);
+    imwrite("minDistImg.exr", out[2]);
 
     cv::waitKey(0);
     return 0;
