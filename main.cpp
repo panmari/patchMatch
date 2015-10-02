@@ -1,3 +1,4 @@
+#include <boost/progress.hpp>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/core/cuda.hpp"
@@ -12,6 +13,7 @@ using namespace cv;
 
 /// Global Variables
 Mat img, img2;
+Ptr<cuda::TemplateMatching> cuda_matcher;
 cuda::GpuMat imgGpu, img2Gpu, templGpu, patchDistanceImgGpu;
 Mat minDistImg;
 
@@ -38,6 +40,7 @@ int main( int argc, char** argv )
     float resizeFactor = 0.5;
     resize(img, img, Size(), resizeFactor, resizeFactor);
     resize(img2, img2, Size(), resizeFactor, resizeFactor);
+    cuda_matcher = cuda::createTemplateMatching(CV_8UC3, CV_TM_SQDIFF);
 
     imgGpu.upload(img);
     img2Gpu.upload(img2);
@@ -58,8 +61,7 @@ int main( int argc, char** argv )
  */
 void MatchingMethod(double *minVal, Point *minLoc) {
     // Do the Matching
-    Ptr<cuda::TemplateMatching> matcher = cuda::createTemplateMatching(CV_8UC3, CV_TM_SQDIFF);
-    matcher->match(imgGpu, templGpu, patchDistanceImgGpu);
+    cuda_matcher->match(imgGpu, templGpu, patchDistanceImgGpu);
 
     // Localizing the best match with minMaxLoc
     cuda::minMaxLoc(patchDistanceImgGpu, minVal, nullptr, minLoc, nullptr);
@@ -74,6 +76,9 @@ void exhaustivePatchMatch(int patchSize = 7) {
     patchDistanceImgGpu.create( img.rows, img.cols, CV_32FC1 );
     minDistImg.create( img.rows, img.cols, CV_32FC1 );
 
+    static int matched_pixels = (img.cols - 2 * patchSize) * (img.rows - 2 * patchSize);
+    boost::progress_display show_progress(matched_pixels);
+    boost::timer timer;
     for (int x = patchSize; x < img.cols - patchSize; x++) {
         for (int y = patchSize; y < img.rows - patchSize; y++) {
             Rect rect(x, y, patchSize, patchSize);
@@ -81,9 +86,10 @@ void exhaustivePatchMatch(int patchSize = 7) {
             double minVal; Point minLoc;
             MatchingMethod(&minVal, &minLoc);
             minDistImg.at<float>(Point(x,y)) = (float)minVal;
+            ++show_progress;
         }
-        cout << x << endl;
     }
+    cout << timer.elapsed() << endl;
     normalize(minDistImg, minDistImg, 0, 1, NORM_MINMAX, CV_32FC1, Mat() );
     imshow(result_window, minDistImg);
     // Convert and save to disk.
