@@ -1,21 +1,12 @@
-#include <boost/progress.hpp>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/core/cuda.hpp"
-#include "opencv2/cudaimgproc.hpp"
-#include "opencv2/cudaarithm.hpp"
+#include "ExhaustivePatchMatch.h"
 
 #include <iostream>
 #include <stdio.h>
 
 using namespace std;
 using namespace cv;
-
-/// Global Variables
-Mat img, img2;
-Ptr<cuda::TemplateMatching> cuda_matcher;
-cuda::GpuMat imgGpu, img2Gpu, templGpu, patchDistanceImgGpu;
-Mat minDistImg;
 
 String result_window = "Result window";
 
@@ -28,8 +19,8 @@ void exhaustivePatchMatch(int);
 int main( int argc, char** argv )
 {
     /// Load image and template
-    img = imread( argv[1], 1 );
-    img2 = imread( argv[2], 1);
+    Mat img = imread( argv[1], 1 );
+    Mat img2 = imread( argv[2], 1);
 
     if (!img.data or !img2.data) {
         printf("Need two pictures as arguments.\n");
@@ -40,61 +31,23 @@ int main( int argc, char** argv )
     float resizeFactor = 0.5;
     resize(img, img, Size(), resizeFactor, resizeFactor);
     resize(img2, img2, Size(), resizeFactor, resizeFactor);
-    cuda_matcher = cuda::createTemplateMatching(CV_8UC3, CV_TM_SQDIFF);
 
-    imgGpu.upload(img);
-    img2Gpu.upload(img2);
+    ExhaustivePatchMatch epm(img, img2);
 
     /// Create windows
     namedWindow( result_window, CV_WINDOW_AUTOSIZE );
 
-    /// Create Trackbar
-    exhaustivePatchMatch(7);
-
-    waitKey(0);
-    return 0;
-}
-
-/**
- * @function MatchingMethod
- * @brief Trackbar callback
- */
-void MatchingMethod(double *minVal, Point *minLoc) {
-    // Do the Matching
-    cuda_matcher->match(imgGpu, templGpu, patchDistanceImgGpu);
-
-    // Localizing the best match with minMaxLoc
-    cuda::minMaxLoc(patchDistanceImgGpu, minVal, nullptr, minLoc, nullptr);
-    return;
-}
-
-/**
- * Tries to find best matching patch in img from a patch in img2.
- */
-void exhaustivePatchMatch(int patchSize = 7) {
-    // Create the result matrix
-    patchDistanceImgGpu.create( img.rows, img.cols, CV_32FC1 );
-    minDistImg.create( img.rows, img.cols, CV_32FC1 );
-
-    static int matched_pixels = (img.cols - 2 * patchSize) * (img.rows - 2 * patchSize);
-    boost::progress_display show_progress(matched_pixels);
-    boost::timer timer;
-    for (int x = patchSize; x < img.cols - patchSize; x++) {
-        for (int y = patchSize; y < img.rows - patchSize; y++) {
-            Rect rect(x, y, patchSize, patchSize);
-            templGpu = img2Gpu(rect);
-            double minVal; Point minLoc;
-            MatchingMethod(&minVal, &minLoc);
-            minDistImg.at<float>(Point(x,y)) = (float)minVal;
-            ++show_progress;
-        }
-    }
-    cout << timer.elapsed() << endl;
+    Mat minDistImg = epm.match(7);
+    // Normalize and show
     normalize(minDistImg, minDistImg, 0, 1, NORM_MINMAX, CV_32FC1, Mat() );
     imshow(result_window, minDistImg);
     // Convert and save to disk.
     minDistImg.convertTo(minDistImg, CV_16U, 255*255);
     imwrite("minDistImg.png", minDistImg);
+
+
+    waitKey(0);
+    return 0;
 }
 
 string getImgType(int imgTypeInt)
