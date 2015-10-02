@@ -74,7 +74,7 @@ void MatchingMethod( int, void* ) {
     cout << "Max: " << to_string(maxVal) << endl;
 
     // For visualization, normalize, download and show
-    cuda::normalize(resultGpu, resultGpu, 0, 1, NORM_MINMAX, -1, Mat() );
+    cuda::normalize(resultGpu, resultGpu, 0, 1, NORM_MINMAX, CV_32FC1, Mat() );
     resultGpu.download(result);
     imshow(result_window, result);
     return;
