@@ -5,8 +5,11 @@
 #include "ExhaustivePatchMatch.h"
 #include <boost/progress.hpp>
 
-using namespace std;
-using namespace cv::cuda;
+using cv::cuda::createTemplateMatching;
+using cv::cuda::GpuMat;
+using cv::Mat;
+using cv::Point;
+using cv::Rect;
 
 ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2) {
     _img.upload(img);
@@ -33,7 +36,7 @@ Mat ExhaustivePatchMatch::match(int patchSize) {
             ++show_progress;
         }
     }
-    cout << timer.elapsed() << endl;
+    std::cout << timer.elapsed() << std::endl;
     return minDistImg;
 }
 
@@ -41,6 +44,6 @@ void ExhaustivePatchMatch::matchSinglePatch(GpuMat &patch, double *minVal, Point
     // Do the Matching
     _cuda_matcher->match(_img, patch, _temp);
     // Localizing the best match with minMaxLoc
-    cuda::minMaxLoc(_temp, minVal, nullptr, minLoc, nullptr);
+    cv::cuda::minMaxLoc(_temp, minVal, nullptr, minLoc, nullptr);
     return;
 }
