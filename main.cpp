@@ -11,47 +11,44 @@ using namespace std;
 using namespace cv;
 
 /// Global Variables
-Mat img; Mat templ; Mat result;
-cuda::GpuMat imgGpu; cuda::GpuMat templGpu; cuda::GpuMat resultGpu;
-String image_window = "Source Image";
+Mat img, img2;
+cuda::GpuMat imgGpu;
+cuda::GpuMat templGpu;
+cuda::GpuMat patchDistanceImgGpu;
+Mat minDistImg;
+
 String result_window = "Result window";
 
 int match_method;
 int max_Trackbar = 5;
 
 /// Function Headers
-void MatchingMethod( int, void* );
+void MatchingMethod(double *minVal, Point *minLoc);
 string getImgType(int imgTypeInt);
+void exhaustivePatchMatch(int);
 
 /** @function main */
 int main( int argc, char** argv )
 {
     /// Load image and template
     img = imread( argv[1], 1 );
-    templ = imread( argv[2], 1 );
+    img2 = imread( argv[2], 1);
 
-    if (!img.data or !templ.data) {
-        printf("No image data \n");
+    if (!img.data or !img2.data) {
+        printf("Need two pictures as arguments.\n");
         return -1;
     }
 
-    imgGpu.upload(img);
-    templGpu.upload(templ);
-    /// Create the result matrix
-    int result_cols =  img.cols - templ.cols + 1;
-    int result_rows = img.rows - templ.rows + 1;
-    resultGpu.create( result_rows, result_cols, CV_32FC1 );
+    // For fast testing, make it tiny
+    resize(img, img, Size(), 0.2, 0.2);
 
+    imgGpu.upload(img);
 
     /// Create windows
-    namedWindow( image_window, CV_WINDOW_AUTOSIZE );
     namedWindow( result_window, CV_WINDOW_AUTOSIZE );
 
     /// Create Trackbar
-    String trackbar_label = "Method: \n 0: SQDIFF \n 1: SQDIFF NORMED \n 2: TM CCORR \n 3: TM CCORR NORMED \n 4: TM COEFF \n 5: TM COEFF NORMED";
-    createTrackbar( trackbar_label, image_window, &match_method, max_Trackbar, MatchingMethod );
-
-    MatchingMethod( 0, 0 );
+    exhaustivePatchMatch(7);
 
     waitKey(0);
     return 0;
@@ -61,23 +58,39 @@ int main( int argc, char** argv )
  * @function MatchingMethod
  * @brief Trackbar callback
  */
-void MatchingMethod( int, void* ) {
+void MatchingMethod(double *minVal, Point *minLoc) {
     /// Do the Matching
     Ptr<cuda::TemplateMatching> matcher = cuda::createTemplateMatching(CV_8UC3, CV_TM_SQDIFF);
-    matcher->match(imgGpu, templGpu, resultGpu);
+    matcher->match(imgGpu, templGpu, patchDistanceImgGpu);
     /// Localizing the best match with minMaxLoc
-    double minVal; double maxVal; Point minLoc; Point maxLoc;
 
-    cuda::minMaxLoc(resultGpu, &minVal, &maxVal, &minLoc, &maxLoc);
-
-    cout << "Min: " << to_string(minVal) << endl;
-    cout << "Max: " << to_string(maxVal) << endl;
+    cuda::minMaxLoc(patchDistanceImgGpu, minVal, nullptr, minLoc, nullptr);
 
     // For visualization, normalize, download and show
-    cuda::normalize(resultGpu, resultGpu, 0, 1, NORM_MINMAX, CV_32FC1, Mat() );
-    resultGpu.download(result);
-    imshow(result_window, result);
+    //cuda::normalize(patchDistanceImgGpu, patchDistanceImgGpu, 0, 1, NORM_MINMAX, CV_32FC1, Mat() );
+    //patchDistanceImgGpu.download(result);
+    //imshow(result_window, result);
     return;
+}
+
+void exhaustivePatchMatch(int patchSize = 7) {
+    // Create the result matrix
+    patchDistanceImgGpu.create( img.rows, img.cols, CV_32FC1 );
+    minDistImg.create( img.rows, img.cols, CV_32FC1 );
+
+    for (int x = patchSize; x < img.cols - patchSize; x++) {
+        for (int y = patchSize; y < img.rows - patchSize; y++) {
+            Rect rect(x, y, patchSize, patchSize);
+            templGpu = imgGpu(rect);
+            double minVal; Point minLoc;
+            MatchingMethod(&minVal, &minLoc);
+            minDistImg.at<double>(Point(x,y)) = minVal;
+        }
+        cout << x << endl;
+    }
+    normalize(minDistImg, minDistImg, 0, 1, NORM_MINMAX, CV_32FC1, Mat() );
+    imshow(result_window, minDistImg);
+    imwrite("minDistImg.png", minDistImg);
 }
 
 string getImgType(int imgTypeInt)
