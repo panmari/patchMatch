@@ -46,7 +46,7 @@ int main( int argc, char** argv )
     namedWindow( result_window, CV_WINDOW_AUTOSIZE );
 
     Mat minDistImg = rpm.match();
-    //Mat minDistImgExhaustive = epm.match(7);
+    //Mat minDistImg = epm.match(7);
     // Normalize and show
     //normalize(minDistImg, minDistImg, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
     //imshow(result_window, minDistImg);

@@ -11,6 +11,7 @@ using cv::Mat;
 using cv::Point;
 using cv::Scalar;
 using cv::Rect;
+using cv::RNG;
 using cv::Vec3f;
 
 using std::max;
@@ -20,18 +21,20 @@ const bool NORMALIZED_DISTANCE = false;
 const float ALPHA = 0.5;
 
 RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize) :
-        _img(img), _img2(img2), _patchSize(patchSize), _max_sarch_radius(max(img2.cols, img2.rows)){
+        _img(img), _img2(img2), _patchSize(patchSize), _rect_full_img2(Point(0,0), _img2.size()),
+        _max_sarch_radius(max(img2.cols, img2.rows)){
     initializeOffsets(patchSize);
 }
 
 cv::Mat RandomizedPatchMatch::match() {
-    Rect rectFullImg(Point(0,0), _img2.size());
     bool isFlipped = false;
+
+    RNG rng( 0xFFFFFFFF );
 
     for (int i = 0; i < MAX_ITERATIONS; i++) {
         for (int x = 0; x < _img.cols - _patchSize; x++) {
             for (int y = 0; y < _img.rows - _patchSize; y++) {
-                float currentDistance = _offset_map.at<Vec3f>(y, x)[2];
+                Vec3f offset_map_entry = _offset_map.at<Vec3f>(y, x);
 
                 // If image is flipped, we need to get x and y coordinates unflipped for getting the right offset.
                 int x_unflipped, y_unflipped;
@@ -49,28 +52,31 @@ cv::Mat RandomizedPatchMatch::match() {
                     Vec3f offsetLeft = _offset_map.at<Vec3f>(y, x - 1);
                     Rect rectLeft((int) offsetLeft[0] + x_unflipped, (int) offsetLeft[1] + y_unflipped,
                                   _patchSize, _patchSize);
-                    if ((rectLeft & rectFullImg) == rectLeft) {
-                        Mat matchingPatchLeft = _img2(rectLeft);
-                        float leftSsd = (float) ssd(currentPatch, matchingPatchLeft);
-                        if (leftSsd < currentDistance) {
-                            _offset_map.at<Vec3f>(y, x) = Vec3f(offsetLeft[0], offsetLeft[1], leftSsd);
-                        }
-                    }
+                    Point offsetLeftPoint(offsetLeft[0], offsetLeft[1]);
+                    updateOffsetMapEntryIfBetter(currentPatch, offsetLeftPoint, rectLeft, &offset_map_entry);
                 }
                 if (y > 0) {
                     Vec3f offsetUp = _offset_map.at<Vec3f>(y - 1, x);
                     Rect rectUp((int) offsetUp[0] + x_unflipped, (int) offsetUp[1] + y_unflipped,
                                 _patchSize, _patchSize);
-                    if ((rectUp & rectFullImg) == rectUp) { // Check if it's fully inside
-                        Mat matchingPatchUp = _img2(rectUp);
-                        float upSsd = (float) ssd(currentPatch, matchingPatchUp);
-                        if (upSsd < currentDistance) {
-                            _offset_map.at<Vec3f>(y, x) = Vec3f(offsetUp[0], offsetUp[1], upSsd);
-                        }
-                    }
+                    Point offsetUpPoint(offsetUp[0], offsetUp[1]);
+                    updateOffsetMapEntryIfBetter(currentPatch, offsetUpPoint, rectUp, &offset_map_entry);
                 }
 
-                // TODO: Do random search.
+                Point current_offset(offset_map_entry[0], offset_map_entry[1]);
+
+                float current_search_radius = _max_sarch_radius;
+                while (current_search_radius > 1) {
+                    Point random_point = Point(rng.uniform(-1, 1), rng.uniform(-1, 1));
+                    Point random_offset = current_offset + random_point * current_search_radius;
+                    Rect random_rect(random_offset.x, random_offset.y, _patchSize, _patchSize);
+
+                    updateOffsetMapEntryIfBetter(currentPatch, random_offset, random_rect, &offset_map_entry);
+
+                    current_search_radius *= ALPHA;
+                }
+                // Write back newly calculated offset_map_entry.
+                _offset_map.at<Vec3f>(y, x) = offset_map_entry;
             }
         }
         // Every second iteration, we go the other way round (start at bottom, propagate from right and down).
@@ -85,6 +91,19 @@ cv::Mat RandomizedPatchMatch::match() {
     return _offset_map;
 }
 
+void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candidate_offset,
+                                                        Rect &candidate_rect, Vec3f *offset_map_entry) {
+    if ((candidate_rect & _rect_full_img2) == candidate_rect) { // Check if it's fully inside
+        Mat matchingPatchUp = _img2(candidate_rect);
+        float ssd_value = (float) ssd(patch, matchingPatchUp);
+        if (ssd_value < (*offset_map_entry)[2]) {
+            offset_map_entry[0] = candidate_offset.x;
+            offset_map_entry[1] = candidate_offset.y;
+            offset_map_entry[2] = ssd_value;
+        }
+    }
+
+}
 double RandomizedPatchMatch::ssd(cv::Mat &patch, cv::Mat &patch2) const {
     Mat tmp;
     addWeighted(patch, 1, patch2, -1, 0, tmp);
@@ -105,6 +124,7 @@ double RandomizedPatchMatch::ssd(cv::Mat &patch, cv::Mat &patch2) const {
     }
     return ssd;
 }
+
 
 void RandomizedPatchMatch::initializeOffsets(int patchSize) {
     _offset_map.create(_img.rows - patchSize, _img.cols - patchSize, CV_32FC3);

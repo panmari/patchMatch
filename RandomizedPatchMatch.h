@@ -21,10 +21,13 @@ public:
 private:
     const cv::Mat _img, _img2;
     cv::Mat _offset_map;
+    const cv::Rect _rect_full_img2;
     const int _patchSize, _max_sarch_radius;
 
     double ssd(cv::Mat &patch, cv::Mat &patch2) const;
     void initializeOffsets(int patchSize);
+    void updateOffsetMapEntryIfBetter(cv::Mat &patch, cv::Point &candidate_offset,
+                                      cv::Rect &candiadate_rect, cv::Vec3f *offset_map_entry);
 };
 
 
