@@ -10,12 +10,18 @@
 class RandomizedPatchMatch {
 
 public:
-    RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2);
-    cv::Mat match(int patchSize);
+    RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize);
+    cv::Mat match();
+
+    /**
+     * Tries to recunstruct img by using patches from img2.
+     */
+    cv::Mat reconstructImgFromPatches() const;
 
 private:
     const cv::Mat _img, _img2;
     cv::Mat _offset_map;
+    const int _patchSize;
 
     double ssd(cv::Mat &patch, cv::Mat &patch2) const;
     void initializeOffsets(int patchSize);

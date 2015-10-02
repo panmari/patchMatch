@@ -38,14 +38,14 @@ int main( int argc, char** argv )
     cout << "Size of img1: " << img.size() << endl;
     cout << "Size of img2: " << img2.size() << endl;
 
-    RandomizedPatchMatch rpm(img, img2);
+    RandomizedPatchMatch rpm(img, img2, 7);
 
     ExhaustivePatchMatch epm(img, img2);
 
     /// Create windows
     namedWindow( result_window, CV_WINDOW_AUTOSIZE );
 
-    Mat minDistImg = rpm.match(7);
+    Mat minDistImg = rpm.match();
     //Mat minDistImgExhaustive = epm.match(7);
     // Normalize and show
     //normalize(minDistImg, minDistImg, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );

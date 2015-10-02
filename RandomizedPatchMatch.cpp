@@ -16,19 +16,19 @@ using cv::Vec3f;
 const int MAX_ITERATIONS = 5;
 const bool NORMALIZED_DISTANCE = false;
 
-RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2) : _img(img), _img2(img2) {
+RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize) : _img(img), _img2(img2),
+                                                                                         _patchSize(patchSize) {
+    initializeOffsets(patchSize);
 }
 
-cv::Mat RandomizedPatchMatch::match(int patchSize) {
-    initializeOffsets(patchSize);
-
+cv::Mat RandomizedPatchMatch::match() {
     Rect rectFullImg(Point(0,0), _img2.size());
     bool isFlipped = false;
 
     for (int i = 0; i < MAX_ITERATIONS; i++) {
-        for (int x = 0; x < _img.cols - patchSize; x++) {
-            for (int y = 0; y < _img.rows - patchSize; y++) {
-                Rect currentPatchRect(x, y, patchSize, patchSize);
+        for (int x = 0; x < _img.cols - _patchSize; x++) {
+            for (int y = 0; y < _img.rows - _patchSize; y++) {
+                Rect currentPatchRect(x, y, _patchSize, _patchSize);
                 Mat currentPatch = _img(currentPatchRect);
                 Vec3f currentOffsetEntry = _offset_map.at<Vec3f>(y, x);
 
@@ -45,7 +45,7 @@ cv::Mat RandomizedPatchMatch::match(int patchSize) {
                 if (x > 0) {
                     Vec3f offsetLeft = _offset_map.at<Vec3f>(y, x - 1);
                     Rect rectLeft((int) offsetLeft[0] + x_unflipped, (int) offsetLeft[1] + y_unflipped,
-                                  patchSize, patchSize);
+                                  _patchSize, _patchSize);
                     if ((rectLeft & rectFullImg) == rectLeft) {
                         Mat matchingPatchLeft = _img2(rectLeft);
                         float leftSsd = (float) ssd(currentPatch, matchingPatchLeft);
@@ -56,7 +56,7 @@ cv::Mat RandomizedPatchMatch::match(int patchSize) {
                 }
                 if (y > 0) {
                     Vec3f offsetUp = _offset_map.at<Vec3f>(y - 1, x);
-                    Rect rectUp((int) offsetUp[0] + x_unflipped, (int) offsetUp[1] + y_unflipped, patchSize, patchSize);
+                    Rect rectUp((int) offsetUp[0] + x_unflipped, (int) offsetUp[1] + y_unflipped, _patchSize, _patchSize);
                     if ((rectUp & rectFullImg) == rectUp) { // Check if it's fully inside
                         Mat matchingPatchUp = _img2(rectUp);
                         float upSsd = (float) ssd(currentPatch, matchingPatchUp);
