@@ -6,11 +6,14 @@
 #include "opencv2/highgui/highgui.hpp"
 
 using cv::addWeighted;
+using cv::flip;
 using cv::Mat;
 using cv::Point;
 using cv::Scalar;
 using cv::Rect;
 using cv::Vec3f;
+
+const int MAX_ITERATIONS = 5;
 
 RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2) : _img(img), _img2(img2) {
 }
@@ -20,35 +23,44 @@ cv::Mat RandomizedPatchMatch::match(int patchSize) {
 
     Rect rectFullImg(Point(0,0), _img2.size());
 
-    for (int x = 0; x < _img.cols - patchSize; x++) {
-        for (int y = 0; y < _img.rows - patchSize; y++) {
-            Rect currentPatchRect(x, y, patchSize, patchSize);
-            Mat currentPatch = _img(currentPatchRect);
-            Vec3f currentOffsetEntry = _offset_map.at<Vec3f>(y, x);
+    for (int i = 0; i < MAX_ITERATIONS; i++) {
+        for (int x = 0; x < _img.cols - patchSize; x++) {
+            for (int y = 0; y < _img.rows - patchSize; y++) {
+                Rect currentPatchRect(x, y, patchSize, patchSize);
+                Mat currentPatch = _img(currentPatchRect);
+                Vec3f currentOffsetEntry = _offset_map.at<Vec3f>(y, x);
 
-            if (x > 0) {
-                Vec3f offsetLeft = _offset_map.at<Vec3f>(y, x - 1);
-                Rect rectLeft((int) offsetLeft[0] + x, (int) offsetLeft[1] + y, patchSize, patchSize);
-                if ((rectLeft & rectFullImg) == rectLeft) {
-                    Mat matchingPatchLeft = _img2(rectLeft);
-                    float leftSsd = (float) ssd(currentPatch, matchingPatchLeft);
-                    if (leftSsd < currentOffsetEntry[2]) {
-                        _offset_map.at<Vec3f>(y, x) = Vec3f(offsetLeft[0], offsetLeft[1], leftSsd);
+                if (x > 0) {
+                    Vec3f offsetLeft = _offset_map.at<Vec3f>(y, x - 1);
+                    Rect rectLeft((int) offsetLeft[0] + x, (int) offsetLeft[1] + y, patchSize, patchSize);
+                    if ((rectLeft & rectFullImg) == rectLeft) {
+                        Mat matchingPatchLeft = _img2(rectLeft);
+                        float leftSsd = (float) ssd(currentPatch, matchingPatchLeft);
+                        if (leftSsd < currentOffsetEntry[2]) {
+                            _offset_map.at<Vec3f>(y, x) = Vec3f(offsetLeft[0], offsetLeft[1], leftSsd);
+                        }
                     }
                 }
-            }
-            if (y > 0) {
-                Vec3f offsetUp = _offset_map.at<Vec3f>(y - 1, x);
-                Rect rectUp((int) offsetUp[0] + x, (int) offsetUp[1] + y, patchSize, patchSize);
-                if ((rectUp & rectFullImg) == rectUp) { // Check if it's fully inside
-                    Mat matchingPatchUp = _img2(rectUp);
-                    float upSsd = (float) ssd(currentPatch, matchingPatchUp);
-                    if (upSsd < currentOffsetEntry[2]) {
-                        _offset_map.at<Vec3f>(y, x) = Vec3f(offsetUp[0], offsetUp[1], upSsd);
+                if (y > 0) {
+                    Vec3f offsetUp = _offset_map.at<Vec3f>(y - 1, x);
+                    Rect rectUp((int) offsetUp[0] + x, (int) offsetUp[1] + y, patchSize, patchSize);
+                    if ((rectUp & rectFullImg) == rectUp) { // Check if it's fully inside
+                        Mat matchingPatchUp = _img2(rectUp);
+                        float upSsd = (float) ssd(currentPatch, matchingPatchUp);
+                        if (upSsd < currentOffsetEntry[2]) {
+                            _offset_map.at<Vec3f>(y, x) = Vec3f(offsetUp[0], offsetUp[1], upSsd);
+                        }
                     }
                 }
             }
         }
+        // Every second iteration, we go the other way round (start at bottom, propagate from right and down).
+        // This effect can be achieved by flipping the matrix after every iteration.
+        flip(_offset_map, _offset_map, -1);
+    }
+    if (MAX_ITERATIONS % 2 == 1) {
+        // Correct orientation based on numbers of iterations.
+        flip(_offset_map, _offset_map, -1);
     }
     return _offset_map;
 }
