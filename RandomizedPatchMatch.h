@@ -16,6 +16,9 @@ public:
 private:
     const cv::Mat _img, _img2;
     cv::Mat _offset_map;
+
+    double ssd(cv::Mat &patch, cv::Mat &patch2) const;
+    void initializeOffsets(int patchSize);
 };
 
 
