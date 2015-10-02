@@ -21,7 +21,7 @@ public:
 private:
     const cv::Mat _img, _img2;
     cv::Mat _offset_map;
-    const int _patchSize;
+    const int _patchSize, _max_sarch_radius;
 
     double ssd(cv::Mat &patch, cv::Mat &patch2) const;
     void initializeOffsets(int patchSize);
