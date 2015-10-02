@@ -14,6 +14,7 @@ using cv::Rect;
 using cv::Vec3f;
 
 const int MAX_ITERATIONS = 5;
+const bool NORMALIZED_DISTANCE = false;
 
 RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2) : _img(img), _img2(img2) {
 }
@@ -22,6 +23,7 @@ cv::Mat RandomizedPatchMatch::match(int patchSize) {
     initializeOffsets(patchSize);
 
     Rect rectFullImg(Point(0,0), _img2.size());
+    bool isFlipped = false;
 
     for (int i = 0; i < MAX_ITERATIONS; i++) {
         for (int x = 0; x < _img.cols - patchSize; x++) {
@@ -30,9 +32,20 @@ cv::Mat RandomizedPatchMatch::match(int patchSize) {
                 Mat currentPatch = _img(currentPatchRect);
                 Vec3f currentOffsetEntry = _offset_map.at<Vec3f>(y, x);
 
+                // If image is flipped, we need to get x and y coordinates unflipped for getting the right offset.
+                int x_unflipped, y_unflipped;
+                if (isFlipped) {
+                    x_unflipped = _offset_map.cols - x;
+                    y_unflipped = _offset_map.rows - y;
+                } else {
+                    x_unflipped = x;
+                    y_unflipped = y;
+                }
+
                 if (x > 0) {
                     Vec3f offsetLeft = _offset_map.at<Vec3f>(y, x - 1);
-                    Rect rectLeft((int) offsetLeft[0] + x, (int) offsetLeft[1] + y, patchSize, patchSize);
+                    Rect rectLeft((int) offsetLeft[0] + x_unflipped, (int) offsetLeft[1] + y_unflipped,
+                                  patchSize, patchSize);
                     if ((rectLeft & rectFullImg) == rectLeft) {
                         Mat matchingPatchLeft = _img2(rectLeft);
                         float leftSsd = (float) ssd(currentPatch, matchingPatchLeft);
@@ -43,7 +56,7 @@ cv::Mat RandomizedPatchMatch::match(int patchSize) {
                 }
                 if (y > 0) {
                     Vec3f offsetUp = _offset_map.at<Vec3f>(y - 1, x);
-                    Rect rectUp((int) offsetUp[0] + x, (int) offsetUp[1] + y, patchSize, patchSize);
+                    Rect rectUp((int) offsetUp[0] + x_unflipped, (int) offsetUp[1] + y_unflipped, patchSize, patchSize);
                     if ((rectUp & rectFullImg) == rectUp) { // Check if it's fully inside
                         Mat matchingPatchUp = _img2(rectUp);
                         float upSsd = (float) ssd(currentPatch, matchingPatchUp);
@@ -57,9 +70,10 @@ cv::Mat RandomizedPatchMatch::match(int patchSize) {
         // Every second iteration, we go the other way round (start at bottom, propagate from right and down).
         // This effect can be achieved by flipping the matrix after every iteration.
         flip(_offset_map, _offset_map, -1);
+        isFlipped = !isFlipped;
     }
-    if (MAX_ITERATIONS % 2 == 1) {
-        // Correct orientation based on numbers of iterations.
+    if (isFlipped) {
+        // Correct orientation if we're still in flipped state.
         flip(_offset_map, _offset_map, -1);
     }
     return _offset_map;
@@ -70,17 +84,20 @@ double RandomizedPatchMatch::ssd(cv::Mat &patch, cv::Mat &patch2) const {
     addWeighted(patch, 1, patch2, -1, 0, tmp);
     tmp.mul(tmp);
     Scalar ssd_channels = sum(tmp);
+    double ssd = ssd_channels[0] + ssd_channels[1] + ssd_channels[2];
+    if (NORMALIZED_DISTANCE) {
+        patch.copyTo(tmp);
+        patch.mul(tmp);
+        Scalar squares_patch = sum(tmp);
 
-    patch.copyTo(tmp);
-    patch.mul(tmp);
-    Scalar squares_patch = sum(tmp);
-
-    patch2.copyTo(tmp);
-    patch2.mul(tmp);
-    Scalar squares_patch2 = sum(tmp);
-    double normalization = sqrt((squares_patch[0] + squares_patch[1] + squares_patch[2]) *
-                                        (squares_patch2[0] + squares_patch2[1] + squares_patch2[2]));
-    return (ssd_channels[0] + ssd_channels[1] + ssd_channels[2])/normalization;
+        patch2.copyTo(tmp);
+        patch2.mul(tmp);
+        Scalar squares_patch2 = sum(tmp);
+        double normalization = sqrt((squares_patch[0] + squares_patch[1] + squares_patch[2]) *
+                                    (squares_patch2[0] + squares_patch2[1] + squares_patch2[2]));
+        ssd /= normalization;
+    }
+    return ssd;
 }
 
 void RandomizedPatchMatch::initializeOffsets(int patchSize) {

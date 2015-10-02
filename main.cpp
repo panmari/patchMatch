@@ -60,6 +60,7 @@ int main( int argc, char** argv )
     imwrite("xoffsets.exr", out[0]);
     normalize(out[1], out[1], 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
     imwrite("yoffsets.exr", out[1]);
+    cout << sum(out[2]) << endl;
     imwrite("minDistImg.exr", out[2]);
 
     cv::waitKey(0);
