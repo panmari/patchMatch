@@ -85,12 +85,14 @@ void exhaustivePatchMatch(int patchSize = 7) {
             templGpu = img2Gpu(rect);
             double minVal; Point minLoc;
             MatchingMethod(&minVal, &minLoc);
-            minDistImg.at<float>(Point(x,y)) = minVal;
+            minDistImg.at<float>(Point(x,y)) = (float)minVal;
         }
         cout << x << endl;
     }
     normalize(minDistImg, minDistImg, 0, 1, NORM_MINMAX, CV_32FC1, Mat() );
     imshow(result_window, minDistImg);
+    // Convert and save to disk.
+    minDistImg.convertTo(minDistImg, CV_16U, 255*255);
     imwrite("minDistImg.png", minDistImg);
 }
 
