@@ -12,7 +12,7 @@ using namespace cv;
 
 /// Global Variables
 Mat img, img2;
-cuda::GpuMat imgGpu;
+cuda::GpuMat imgGpu, img2Gpu;
 cuda::GpuMat templGpu;
 cuda::GpuMat patchDistanceImgGpu;
 Mat minDistImg;
@@ -40,9 +40,12 @@ int main( int argc, char** argv )
     }
 
     // For fast testing, make it tiny
-    resize(img, img, Size(), 0.2, 0.2);
+    float resizeFactor = 0.2;
+    resize(img, img, Size(), resizeFactor, resizeFactor);
+    resize(img2, img2, Size(), resizeFactor, resizeFactor);
 
     imgGpu.upload(img);
+    img2Gpu.upload(img2);
 
     /// Create windows
     namedWindow( result_window, CV_WINDOW_AUTOSIZE );
@@ -59,20 +62,18 @@ int main( int argc, char** argv )
  * @brief Trackbar callback
  */
 void MatchingMethod(double *minVal, Point *minLoc) {
-    /// Do the Matching
+    // Do the Matching
     Ptr<cuda::TemplateMatching> matcher = cuda::createTemplateMatching(CV_8UC3, CV_TM_SQDIFF);
     matcher->match(imgGpu, templGpu, patchDistanceImgGpu);
-    /// Localizing the best match with minMaxLoc
 
+    // Localizing the best match with minMaxLoc
     cuda::minMaxLoc(patchDistanceImgGpu, minVal, nullptr, minLoc, nullptr);
-
-    // For visualization, normalize, download and show
-    //cuda::normalize(patchDistanceImgGpu, patchDistanceImgGpu, 0, 1, NORM_MINMAX, CV_32FC1, Mat() );
-    //patchDistanceImgGpu.download(result);
-    //imshow(result_window, result);
     return;
 }
 
+/**
+ * Tries to find best matching patch in img from a patch in img2.
+ */
 void exhaustivePatchMatch(int patchSize = 7) {
     // Create the result matrix
     patchDistanceImgGpu.create( img.rows, img.cols, CV_32FC1 );
@@ -81,10 +82,10 @@ void exhaustivePatchMatch(int patchSize = 7) {
     for (int x = patchSize; x < img.cols - patchSize; x++) {
         for (int y = patchSize; y < img.rows - patchSize; y++) {
             Rect rect(x, y, patchSize, patchSize);
-            templGpu = imgGpu(rect);
+            templGpu = img2Gpu(rect);
             double minVal; Point minLoc;
             MatchingMethod(&minVal, &minLoc);
-            minDistImg.at<double>(Point(x,y)) = minVal;
+            minDistImg.at<float>(Point(x,y)) = minVal;
         }
         cout << x << endl;
     }
