@@ -13,13 +13,13 @@ class ExhaustivePatchMatch {
 
 public:
     ExhaustivePatchMatch(cv::Mat &img, cv::Mat &img2);
-    cv::Mat match(int patchSize) const;
+    cv::Mat match(int patchSize);
 
 private:
     cv::cuda::GpuMat _img, _img2, _temp;
     cv::Ptr<cv::cuda::TemplateMatching> _cuda_matcher;
 
-    void matchSinglePatch(cv::cuda::GpuMat &patch, double *minVal, cv::Point *minLoc) const;
+    void matchSinglePatch(cv::cuda::GpuMat &patch, double *minVal, cv::Point *minLoc);
 };
 
 
