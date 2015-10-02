@@ -12,15 +12,10 @@ using namespace cv;
 
 /// Global Variables
 Mat img, img2;
-cuda::GpuMat imgGpu, img2Gpu;
-cuda::GpuMat templGpu;
-cuda::GpuMat patchDistanceImgGpu;
+cuda::GpuMat imgGpu, img2Gpu, templGpu, patchDistanceImgGpu;
 Mat minDistImg;
 
 String result_window = "Result window";
-
-int match_method;
-int max_Trackbar = 5;
 
 /// Function Headers
 void MatchingMethod(double *minVal, Point *minLoc);
@@ -40,7 +35,7 @@ int main( int argc, char** argv )
     }
 
     // For fast testing, make it tiny
-    float resizeFactor = 0.2;
+    float resizeFactor = 0.5;
     resize(img, img, Size(), resizeFactor, resizeFactor);
     resize(img2, img2, Size(), resizeFactor, resizeFactor);
 
