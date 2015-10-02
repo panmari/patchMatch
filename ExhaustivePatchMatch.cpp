@@ -18,7 +18,7 @@ ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2) {
     _temp.create(_img.rows, _img.cols, CV_32FC1);
 }
 
-Mat ExhaustivePatchMatch::match(int patchSize) {
+Mat ExhaustivePatchMatch::match(int patchSize) const {
     // Create the result matrix
     Mat minDistImg;
     minDistImg.create(_img.rows, _img.cols, CV_32FC1);
@@ -40,7 +40,7 @@ Mat ExhaustivePatchMatch::match(int patchSize) {
     return minDistImg;
 }
 
-void ExhaustivePatchMatch::matchSinglePatch(GpuMat &patch, double *minVal, Point *minLoc) {
+void ExhaustivePatchMatch::matchSinglePatch(GpuMat &patch, double *minVal, Point *minLoc) const {
     // Do the Matching
     _cuda_matcher->match(_img, patch, _temp);
     // Localizing the best match with minMaxLoc
