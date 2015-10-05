@@ -10,12 +10,13 @@ using cv::cuda::GpuMat;
 using cv::Mat;
 using cv::Point;
 using cv::Rect;
+using cv::Scalar;
 using cv::Vec3f;
 
 ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2) {
     _img.upload(img);
     _img2.upload(img2);
-    _cuda_matcher = createTemplateMatching(CV_8UC3, CV_TM_SQDIFF);
+    _cuda_matcher = createTemplateMatching(CV_32FC3, CV_TM_SQDIFF);
     _temp.create(_img.rows, _img.cols, CV_32FC1);
 }
 
@@ -38,6 +39,8 @@ Mat ExhaustivePatchMatch::match(int patchSize) {
         }
     }
     std::cout << timer.elapsed() << std::endl;
+    Scalar squared_diff = sum(minDistImg);
+    std::cout << squared_diff[2] << std::endl;
     return minDistImg;
 }
 
