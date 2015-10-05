@@ -15,7 +15,7 @@ public:
     /**
      * Tries to recunstruct img by using patches from img2.
      */
-    cv::Mat reconstructImgFromPatches() const;
+    cv::Mat triviallyReconstructImgFromPatches() const;
 
 private:
     const cv::Mat _img, _img2;

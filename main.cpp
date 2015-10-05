@@ -39,19 +39,10 @@ int main( int argc, char** argv )
 
     ExhaustivePatchMatch epm(img, img2);
 
-    /// Create windows
-
     Mat minDistImg = rpm.match();
-    //Mat minDistImg = epm.match(7);
-    // Normalize and show
-    //normalize(minDistImg, minDistImg, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
-    //imshow(result_window, minDistImg);
-    // Convert and save to disk.
-    //minDistImg.convertTo(minDistImg, CV_16U, 255*255);
-    Mat xoffsets, yoffsets, diff;
-    Mat out[] = {xoffsets, yoffsets, diff};
-    split(minDistImg, out);
 
+    Mat reconstructed = rpm.triviallyReconstructImgFromPatches();
+    imwrite("reconstructed.exr", reconstructed);
     return 0;
 }
 
