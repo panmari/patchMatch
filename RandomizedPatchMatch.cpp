@@ -4,12 +4,14 @@
 
 #include "RandomizedPatchMatch.h"
 #include "opencv2/highgui/highgui.hpp"
+#include <iostream>
 
 using cv::addWeighted;
 using cv::flip;
 using cv::Mat;
 using cv::Point;
 using cv::Scalar;
+using cv::String;
 using cv::Rect;
 using cv::RNG;
 using cv::Vec3f;
@@ -75,10 +77,12 @@ cv::Mat RandomizedPatchMatch::match() {
 
                     current_search_radius *= ALPHA;
                 }
-                // Write back newly calculated offset_map_entry.
+
+                // Write back newly calculated offsetgit stat_map_entry.
                 _offset_map.at<Vec3f>(y, x) = offset_map_entry;
             }
         }
+        dumpOffsetMapToFile(std::to_string(i));
         // Every second iteration, we go the other way round (start at bottom, propagate from right and down).
         // This effect can be achieved by flipping the matrix after every iteration.
         flip(_offset_map, _offset_map, -1);
@@ -94,21 +98,22 @@ cv::Mat RandomizedPatchMatch::match() {
 void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candidate_offset,
                                                         Rect &candidate_rect, Vec3f *offset_map_entry) {
     if ((candidate_rect & _rect_full_img2) == candidate_rect) { // Check if it's fully inside
-        Mat matchingPatchUp = _img2(candidate_rect);
-        float ssd_value = (float) ssd(patch, matchingPatchUp);
-        if (ssd_value < (*offset_map_entry)[2]) {
-            offset_map_entry[0] = candidate_offset.x;
-            offset_map_entry[1] = candidate_offset.y;
-            offset_map_entry[2] = ssd_value;
+        Mat candidate_patch = _img2(candidate_rect);
+        float ssd_value = (float) ssd(patch, candidate_patch);
+        if (ssd_value < offset_map_entry->val[2]) {
+            offset_map_entry->val[0] = candidate_offset.x;
+            offset_map_entry->val[1] = candidate_offset.y;
+            offset_map_entry->val[2] = ssd_value;
         }
     }
 
 }
+
 double RandomizedPatchMatch::ssd(cv::Mat &patch, cv::Mat &patch2) const {
-    Mat tmp;
+    Mat tmp = patch.clone();
     addWeighted(patch, 1, patch2, -1, 0, tmp);
-    tmp.mul(tmp);
-    Scalar ssd_channels = sum(tmp);
+    Mat squares = tmp.mul(tmp);
+    Scalar ssd_channels = sum(squares);
     double ssd = ssd_channels[0] + ssd_channels[1] + ssd_channels[2];
     if (NORMALIZED_DISTANCE) {
         patch.copyTo(tmp);
@@ -127,6 +132,8 @@ double RandomizedPatchMatch::ssd(cv::Mat &patch, cv::Mat &patch2) const {
 
 
 void RandomizedPatchMatch::initializeOffsets(int patchSize) {
+    // Seed random;
+    srand(42);
     _offset_map.create(_img.rows - patchSize, _img.cols - patchSize, CV_32FC3);
     for (int x = 0; x < _offset_map.cols; x++) {
         for (int y = 0; y < _offset_map.rows; y++) {
@@ -142,4 +149,21 @@ void RandomizedPatchMatch::initializeOffsets(int patchSize) {
         }
     }
 
+}
+
+void RandomizedPatchMatch::dumpOffsetMapToFile(String filename_modifier) const {
+    Mat xoffsets, yoffsets, diff, normed;
+    Mat out[] = {xoffsets, yoffsets, diff};
+    split(_offset_map, out);
+
+    normalize(out[0], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
+    imwrite("xoffsets" + filename_modifier + ".exr", normed);
+    normalize(out[1], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
+    imwrite("yoffsets" + filename_modifier + ".exr", out[1]);
+    std::cout << sum(out[2]) << std::endl;
+    imwrite("minDistImg" + filename_modifier + ".exr", out[2]);
+    // To doublecheck that existing images were not altered
+
+    imwrite("img1" + filename_modifier + ".exr", _img);
+    imwrite("img2" + filename_modifier + ".exr", _img2);
 }

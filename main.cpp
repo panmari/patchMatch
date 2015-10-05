@@ -15,6 +15,7 @@ using cv::String;
 using cv::split;
 
 String result_window = "Result window";
+void convert_for_computation(Mat &img);
 
 int main( int argc, char** argv )
 {
@@ -28,12 +29,8 @@ int main( int argc, char** argv )
     }
 
     // For fast testing, make it tiny
-    float resizeFactor = 0.5;
-    resize(img, img, Size(), resizeFactor, resizeFactor);
-    resize(img2, img2, Size(), resizeFactor, resizeFactor);
-    // Convert images to lab, default returned by imread is BGR.
-    cvtColor(img, img, CV_BGR2Lab);
-    cvtColor(img2, img2, CV_BGR2Lab);
+    convert_for_computation(img);
+    convert_for_computation(img2);
 
     cout << "Size of img1: " << img.size() << endl;
     cout << "Size of img2: " << img2.size() << endl;
@@ -43,7 +40,6 @@ int main( int argc, char** argv )
     ExhaustivePatchMatch epm(img, img2);
 
     /// Create windows
-    namedWindow( result_window, CV_WINDOW_AUTOSIZE );
 
     Mat minDistImg = rpm.match();
     //Mat minDistImg = epm.match(7);
@@ -56,13 +52,13 @@ int main( int argc, char** argv )
     Mat out[] = {xoffsets, yoffsets, diff};
     split(minDistImg, out);
 
-    normalize(out[0], out[0], 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
-    imwrite("xoffsets.exr", out[0]);
-    normalize(out[1], out[1], 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
-    imwrite("yoffsets.exr", out[1]);
-    cout << sum(out[2]) << endl;
-    imwrite("minDistImg.exr", out[2]);
-
-    cv::waitKey(0);
     return 0;
+}
+
+// Convert images to lab, default returned by imread is BGR.
+void convert_for_computation(Mat &img) {
+    const float resizeFactor = 0.5;
+    resize(img, img, Size(), resizeFactor, resizeFactor);
+    img.convertTo(img, CV_32FC3, 1 / 255.f);
+    cvtColor(img, img, CV_BGR2Lab);
 }

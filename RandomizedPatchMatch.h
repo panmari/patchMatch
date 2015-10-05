@@ -12,7 +12,6 @@ class RandomizedPatchMatch {
 public:
     RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize);
     cv::Mat match();
-
     /**
      * Tries to recunstruct img by using patches from img2.
      */
@@ -24,6 +23,8 @@ private:
     const cv::Rect _rect_full_img2;
     const int _patchSize, _max_sarch_radius;
 
+    // Mainly for debugging, dumps offset map to file.
+    void dumpOffsetMapToFile(cv::String filename_modifier) const;
     double ssd(cv::Mat &patch, cv::Mat &patch2) const;
     void initializeOffsets(int patchSize);
     void updateOffsetMapEntryIfBetter(cv::Mat &patch, cv::Point &candidate_offset,
