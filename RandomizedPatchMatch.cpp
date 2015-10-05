@@ -152,18 +152,35 @@ void RandomizedPatchMatch::initializeOffsets(int patchSize) {
 }
 
 void RandomizedPatchMatch::dumpOffsetMapToFile(String filename_modifier) const {
-    Mat xoffsets, yoffsets, diff, normed;
+    Mat xoffsets, yoffsets, diff;
     Mat out[] = {xoffsets, yoffsets, diff};
     split(_offset_map, out);
+    Mat angles = Mat::zeros(_offset_map.size(), CV_32FC1);
+    Mat magnitudes = Mat::zeros(_offset_map.size(), CV_32FC1);
 
-    normalize(out[0], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
-    imwrite("xoffsets" + filename_modifier + ".exr", normed);
-    normalize(out[1], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
+    // Produce some nice to look at output by coding angle to best patch as hue, magnitude as saturation.
+    for (int x = 0; x < _offset_map.cols; x++) {
+        for (int y = 0; y < _offset_map.rows; y++) {
+            Vec3f offset_map_entry = _offset_map.at<Vec3f>(y, x);
+            float x_offset = offset_map_entry[0];
+            float y_offset = offset_map_entry[1];
+            float angle = atan2(x_offset, y_offset);
+            if (angle < 0)
+                angle += M_PI * 2;
+            angles.at<float>(y, x) = angle / (M_PI * 2) * 360;
+            magnitudes.at<float>(y, x) = sqrt(x_offset*x_offset + y_offset*y_offset);
+        }
+    }
+    normalize(magnitudes, magnitudes, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
+    Mat hsv_array[] = {angles, magnitudes, Mat::ones(_offset_map.size(), CV_32FC1)};
+    Mat hsv;
+    cv::merge(hsv_array, 3, hsv);
+    cvtColor(hsv, hsv, CV_HSV2BGR);
+    imwrite("hsv_offsets" + filename_modifier + ".exr", hsv);
+
+    // Dump unnormalized values for inspection.
+    imwrite("xoffsets" + filename_modifier + ".exr", out[0]);
     imwrite("yoffsets" + filename_modifier + ".exr", out[1]);
     std::cout << sum(out[2]) << std::endl;
     imwrite("minDistImg" + filename_modifier + ".exr", out[2]);
-    // To doublecheck that existing images were not altered
-
-    imwrite("img1" + filename_modifier + ".exr", _img);
-    imwrite("img2" + filename_modifier + ".exr", _img2);
 }
