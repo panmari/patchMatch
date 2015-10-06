@@ -74,7 +74,8 @@ cv::Mat RandomizedPatchMatch::match() {
                         Point random_point = Point(rng.uniform(-1.f, 1.f) * current_search_radius,
                                                    rng.uniform(-1.f, 1.f) * current_search_radius);
                         Point random_offset = current_offset + random_point;
-                        Rect random_rect(random_offset.x, random_offset.y, _patchSize, _patchSize);
+                        Rect random_rect(x_unflipped + random_offset.x,
+                                         y_unflipped + random_offset.y, _patchSize, _patchSize);
 
                         updateOffsetMapEntryIfBetter(currentPatch, random_offset, random_rect, &offset_map_entry);
 
