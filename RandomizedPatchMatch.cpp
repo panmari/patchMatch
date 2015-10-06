@@ -153,7 +153,7 @@ void RandomizedPatchMatch::initializeOffsets(int patchSize) {
 }
 
 void RandomizedPatchMatch::dumpOffsetMapToFile(String filename_modifier) const {
-    Mat xoffsets, yoffsets, diff;
+    Mat xoffsets, yoffsets, diff, normed;
     Mat out[] = {xoffsets, yoffsets, diff};
     split(_offset_map, out);
     Mat angles = Mat::zeros(_offset_map.size(), CV_32FC1);
@@ -183,7 +183,9 @@ void RandomizedPatchMatch::dumpOffsetMapToFile(String filename_modifier) const {
     imwrite("xoffsets" + filename_modifier + ".exr", out[0]);
     imwrite("yoffsets" + filename_modifier + ".exr", out[1]);
     std::cout << sum(out[2]) << std::endl;
-    imwrite("minDistImg" + filename_modifier + ".exr", out[2]);
+    imwrite("min_dist_img" + filename_modifier + ".exr", out[2]);
+    normalize(out[2], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
+    imwrite("min_dist_img_normalized" + filename_modifier + ".exr", normed);
 }
 
 cv::Mat RandomizedPatchMatch::triviallyReconstructImgFromPatches() const {
