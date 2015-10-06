@@ -1,7 +1,3 @@
-//
-// Created by moser on 06.10.15.
-//
-
 #include "TrivialReconstruction.h"
 #include <iostream>
 

@@ -3,6 +3,7 @@
 #include "ExhaustivePatchMatch.h"
 #include "RandomizedPatchMatch.h"
 #include "TrivialReconstruction.h"
+#include "VotedReconstruction.h"
 
 #include <iostream>
 
@@ -41,10 +42,16 @@ int main( int argc, char** argv )
     ExhaustivePatchMatch epm(img, img2);
 
     Mat minDistImg = rpm.match();
+    //Mat minDistImg = epm.match(7);
 
     TrivialReconstruction tr(minDistImg, img2);
     Mat reconstructed = tr.reconstruct();
     imwrite("reconstructed.exr", reconstructed);
+
+    VotedReconstruction vr(minDistImg, img2, 7);
+    Mat reconstructed2 = vr.reconstruct();
+    imwrite("reconstructed_voted.exr", reconstructed2);
+
     return 0;
 }
 

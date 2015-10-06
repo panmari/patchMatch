@@ -1,7 +1,3 @@
-//
-// Created by moser on 02.10.15.
-//
-
 #include "ExhaustivePatchMatch.h"
 #include <boost/progress.hpp>
 
@@ -34,7 +30,7 @@ Mat ExhaustivePatchMatch::match(int patchSize) {
             GpuMat patch = _img2(rect);
             double minVal; Point minLoc;
             matchSinglePatch(patch, &minVal, &minLoc);
-            minDistImg.at<Vec3f>(y, x) = Vec3f(minLoc.x, minLoc.y, minVal);
+            minDistImg.at<Vec3f>(y, x) = Vec3f(minLoc.x - x, minLoc.y - y, minVal);
             ++show_progress;
         }
     }

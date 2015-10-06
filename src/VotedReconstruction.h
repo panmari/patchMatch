@@ -1,12 +1,13 @@
-#ifndef PATCHMATCH_TRIVIALRECONSTRUCTION_H
-#define PATCHMATCH_TRIVIALRECONSTRUCTION_H
+//
+// Created by moser on 06.10.15.
+//
+
+#ifndef PATCHMATCH_VOTEDRECONSTRUCTION_H
+#define PATCHMATCH_VOTEDRECONSTRUCTION_H
 
 #include "opencv2/imgproc/imgproc.hpp"
 
-/**
- * Trivially reconstructs an image by just taking into account only one single pixel of the closest matching patch.
- */
-class TrivialReconstruction {
+class VotedReconstruction {
 
 public:
     /**
@@ -14,11 +15,15 @@ public:
      * the y-channel being the y-offset.
      * The patch image is assumed to be the one referenced in offset_map.
      */
-    TrivialReconstruction(cv::Mat &offset_map, cv::Mat &patch_img);
+    VotedReconstruction(cv::Mat &offset_map, cv::Mat &patch_img, int patch_size);
+
     cv::Mat reconstruct() const;
+
 private:
     cv::Mat _offset_map, _patch_img;
+    int _patch_size;
+
 };
 
 
-#endif //PATCHMATCH_TRIVIALRECONSTRUCTION_H
+#endif //PATCHMATCH_VOTEDRECONSTRUCTION_H
