@@ -20,7 +20,8 @@ using std::max;
 
 const int MAX_ITERATIONS = 5;
 const bool NORMALIZED_DISTANCE = false;
-const float ALPHA = 0.5;
+const bool RANDOM_SEARCH = true;
+const float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
 RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize) :
         _img(img), _img2(img2), _patchSize(patchSize), _rect_full_img2(Point(0,0), _img2.size()),
@@ -41,8 +42,8 @@ cv::Mat RandomizedPatchMatch::match() {
                 // If image is flipped, we need to get x and y coordinates unflipped for getting the right offset.
                 int x_unflipped, y_unflipped;
                 if (isFlipped) {
-                    x_unflipped = _offset_map.cols - x;
-                    y_unflipped = _offset_map.rows - y;
+                    x_unflipped = _offset_map.cols - 1 - x;
+                    y_unflipped = _offset_map.rows - 1 - y;
                 } else {
                     x_unflipped = x;
                     y_unflipped = y;
@@ -67,18 +68,19 @@ cv::Mat RandomizedPatchMatch::match() {
 
                 Point current_offset(offset_map_entry[0], offset_map_entry[1]);
 
-                float current_search_radius = _max_sarch_radius;
-                while (current_search_radius > 1) {
-                    Point random_point = Point(rng.uniform(-1.f, 1.f) * current_search_radius,
-                                               rng.uniform(-1.f, 1.f) * current_search_radius);
-                    Point random_offset = current_offset + random_point;
-                    Rect random_rect(random_offset.x, random_offset.y, _patchSize, _patchSize);
+                if (RANDOM_SEARCH) {
+                    float current_search_radius = _max_sarch_radius;
+                    while (current_search_radius > 1) {
+                        Point random_point = Point(rng.uniform(-1.f, 1.f) * current_search_radius,
+                                                   rng.uniform(-1.f, 1.f) * current_search_radius);
+                        Point random_offset = current_offset + random_point;
+                        Rect random_rect(random_offset.x, random_offset.y, _patchSize, _patchSize);
 
-                    updateOffsetMapEntryIfBetter(currentPatch, random_offset, random_rect, &offset_map_entry);
+                        updateOffsetMapEntryIfBetter(currentPatch, random_offset, random_rect, &offset_map_entry);
 
-                    current_search_radius *= ALPHA;
+                        current_search_radius *= ALPHA;
+                    }
                 }
-
                 // Write back newly calculated offsetgit stat_map_entry.
                 _offset_map.at<Vec3f>(y, x) = offset_map_entry;
             }

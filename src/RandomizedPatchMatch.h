@@ -12,10 +12,10 @@ class RandomizedPatchMatch {
 public:
     RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize);
     cv::Mat match();
+    cv::Mat _offset_map;
 
 private:
     const cv::Mat _img, _img2;
-    cv::Mat _offset_map;
     const cv::Rect _rect_full_img2;
     const int _patchSize, _max_sarch_radius;
 
