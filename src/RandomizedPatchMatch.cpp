@@ -187,18 +187,3 @@ void RandomizedPatchMatch::dumpOffsetMapToFile(String filename_modifier) const {
     normalize(out[2], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
     imwrite("min_dist_img_normalized" + filename_modifier + ".exr", normed);
 }
-
-cv::Mat RandomizedPatchMatch::triviallyReconstructImgFromPatches() const {
-    Mat reconstructed;
-    reconstructed.create(_offset_map.size(), CV_32FC3);
-    for (int x = 0; x < _offset_map.cols; x++) {
-        for (int y = 0; y < _offset_map.rows; y++) {
-            Vec3f offset_map_entry = _offset_map.at<Vec3f>(y, x);
-            Vec3f best_match = _img2.at<Vec3f>(y + offset_map_entry[1], x + offset_map_entry[0]);
-            reconstructed.at<Vec3f>(y, x) = best_match;
-        }
-    }
-
-    cvtColor(reconstructed, reconstructed, CV_Lab2BGR);
-    return reconstructed;
-}

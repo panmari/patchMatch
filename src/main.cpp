@@ -2,6 +2,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "ExhaustivePatchMatch.h"
 #include "RandomizedPatchMatch.h"
+#include "TrivialReconstruction.h"
 
 #include <iostream>
 
@@ -41,7 +42,8 @@ int main( int argc, char** argv )
 
     Mat minDistImg = rpm.match();
 
-    Mat reconstructed = rpm.triviallyReconstructImgFromPatches();
+    TrivialReconstruction tr(minDistImg, img2);
+    Mat reconstructed = tr.reconstruct();
     imwrite("reconstructed.exr", reconstructed);
     return 0;
 }

@@ -12,10 +12,6 @@ class RandomizedPatchMatch {
 public:
     RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize);
     cv::Mat match();
-    /**
-     * Tries to recunstruct img by using patches from img2.
-     */
-    cv::Mat triviallyReconstructImgFromPatches() const;
 
 private:
     const cv::Mat _img, _img2;
