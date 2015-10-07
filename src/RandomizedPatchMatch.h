@@ -15,16 +15,15 @@ public:
     cv::Mat _offset_map;
 
 private:
-    const cv::Mat _img, _img2;
-    const cv::Rect _rect_full_img2;
+    std::vector<cv::Mat> _img_pyr, _img2_pyr;
     const int _patchSize, _max_sarch_radius;
 
     // Mainly for debugging, dumps offset map to file.
-    void dumpOffsetMapToFile(cv::String filename_modifier) const;
+    void dumpOffsetMapToFile(cv::Mat &offset_map, cv::String filename_modifier) const;
     double ssd(cv::Mat &patch, cv::Mat &patch2) const;
-    void initializeOffsets(int patchSize);
+    void initializeWithRandomOffsets(cv::Mat &img, cv::Mat &img2, cv::Mat &offset_map);
     void updateOffsetMapEntryIfBetter(cv::Mat &patch, cv::Point &candidate_offset,
-                                      cv::Rect &candiadate_rect, cv::Vec3f *offset_map_entry);
+                                      cv::Rect &candiadate_rect, cv::Mat &other_img, cv::Vec3f *offset_map_entry);
 };
 
 
