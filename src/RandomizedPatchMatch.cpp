@@ -23,6 +23,7 @@ using std::max;
 const int ITERATIONS_PER_SCALE = 5;
 const bool NORMALIZED_DISTANCE = false;
 const bool RANDOM_SEARCH = true;
+const bool MERGE_UPSAMPLED_OFFSETS = true;
 const float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
 RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize) :
@@ -45,8 +46,22 @@ cv::Mat RandomizedPatchMatch::match() {
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
             // After half the iterations, merge the lower resolution offset where they're better.
             // This has to be done in an 'even' iteration because of the flipping.
-            if (s != _nr_scales && i == ITERATIONS_PER_SCALE / 2) {
-                // TODO: implement merging.
+            if (MERGE_UPSAMPLED_OFFSETS && s != _nr_scales && i == ITERATIONS_PER_SCALE / 2) {
+                Mat lower_offset_map = _offset_map_pyr[s + 1];
+                for (int x = 0; x < lower_offset_map.cols; x++) {
+                    for (int y = 0; y < lower_offset_map.rows; y++) {
+                        // Check 4 corresponding pixels in higher resolution offset image.
+                        Vec3f lower_offset = lower_offset_map.at<Vec3f>(y, x);
+                        Point candidate_offset(lower_offset[0] * 2, lower_offset[1] * 2);
+                        Rect candidate_rect((lower_offset[0] + x) * 2, (lower_offset[1] + y) * 2,
+                                            _patchSize, _patchSize);
+                        Rect current_patch_rect(x * 2, y * 2, _patchSize, _patchSize);
+                        Mat current_patch = img(current_patch_rect);
+                        Vec3f* current_offset = offset_map.ptr<Vec3f>(y, x);
+                        updateOffsetMapEntryIfBetter(current_patch, candidate_offset,
+                                                     candidate_rect, img2, current_offset);
+                    }
+                }
             }
             for (int x = 0; x < offset_map.cols; x++) {
                 for (int y = 0; y < offset_map.rows; y++) {
