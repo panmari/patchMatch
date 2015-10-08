@@ -35,7 +35,7 @@ RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patc
 cv::Mat RandomizedPatchMatch::match() {
     RNG rng( 0xFFFFFFFF );
 
-    for (int s = _nr_scales - 1; s >= 0; s--) {
+    for (int s = _nr_scales; s >= 0; s--) {
         Mat img = _img_pyr[s];
         Mat img2 = _img2_pyr[s];
         Mat offset_map;
@@ -44,7 +44,7 @@ cv::Mat RandomizedPatchMatch::match() {
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
             // After half the iterations, merge the lower resolution offset where they're better.
             // This has to be done in an 'even' iteration because of the flipping.
-            if (s != _nr_scales - 1 && i == ITERATIONS_PER_SCALE / 2) {
+            if (s != _nr_scales && i == ITERATIONS_PER_SCALE / 2) {
                 // TODO: implement merging.
             }
             for (int x = 0; x < offset_map.cols; x++) {
