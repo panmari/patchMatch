@@ -20,32 +20,31 @@ using cv::Vec3f;
 
 using std::max;
 
-const int NR_SCALES = 5;
 const int ITERATIONS_PER_SCALE = 5;
 const bool NORMALIZED_DISTANCE = false;
 const bool RANDOM_SEARCH = true;
 const float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
 RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize) :
-        _patchSize(patchSize), _max_sarch_radius(max(img2.cols, img2.rows)) {
-    // TODO: compute nr_scales dynamically.
-    //_nr_scales = std::min(img.cols, img.rows);
-    buildPyramid(img, _img_pyr, NR_SCALES);
-    buildPyramid(img2, _img2_pyr, NR_SCALES);
+        _patchSize(patchSize), _max_sarch_radius(max(img2.cols, img2.rows)),
+        _nr_scales((int) log2(std::min(img.cols, img.rows) / (2.f * patchSize))) {
+    buildPyramid(img, _img_pyr, _nr_scales);
+    buildPyramid(img2, _img2_pyr, _nr_scales);
 }
 
 cv::Mat RandomizedPatchMatch::match() {
     RNG rng( 0xFFFFFFFF );
 
-    for (int s = NR_SCALES - 1; s >= 0; s--) {
+    for (int s = _nr_scales - 1; s >= 0; s--) {
         Mat img = _img_pyr[s];
         Mat img2 = _img2_pyr[s];
         Mat offset_map;
         initializeWithRandomOffsets(img, img2, offset_map);
         bool isFlipped = false;
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
-            // After half the iterations, merge the lower resolution offset where they're better
-            if (s != NR_SCALES - 1 && i == ITERATIONS_PER_SCALE / 2) {
+            // After half the iterations, merge the lower resolution offset where they're better.
+            // This has to be done in an 'even' iteration because of the flipping.
+            if (s != _nr_scales - 1 && i == ITERATIONS_PER_SCALE / 2) {
                 // TODO: implement merging.
             }
             for (int x = 0; x < offset_map.cols; x++) {
