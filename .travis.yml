@@ -11,6 +11,6 @@ addons:
     - libopencv-dev
 
 script:
-  - cmake
+  - cmake .
   - make
   - runUnitTests
