@@ -7,12 +7,14 @@
 
 #include <iostream>
 
+using cv::addWeighted;
 using cv::Mat;
 using cv::Size;
 using cv::namedWindow;
 using cv::imread;
 using std::cout;
 using std::endl;
+using cv::Scalar;
 using cv::String;
 using cv::split;
 
@@ -51,7 +53,11 @@ int main( int argc, char** argv )
     VotedReconstruction vr(minDistImg, img2, 7);
     Mat reconstructed2 = vr.reconstruct();
     imwrite("reconstructed_voted.exr", reconstructed2);
-
+    Mat diff;
+    addWeighted(img, 1, reconstructed2, -1, 0, diff);
+    Mat diff_sqr = diff.mul(diff);
+    Scalar per_channel_diff = sum(diff_sqr);
+    cout << per_channel_diff[0] + per_channel_diff[1] + per_channel_diff[2] << endl;
     return 0;
 }
 

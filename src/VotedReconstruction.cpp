@@ -6,6 +6,12 @@ using cv::Rect;
 using cv::Vec3f;
 using std::vector;
 
+/**
+ * Patches with higher similarity have higher weights in reconstruction. If false, ever patch has the same weight (1).
+ */
+const bool WEIGHTED_BY_SIMILARITY = true;
+const float SIGMA_SQR = 3;
+
 VotedReconstruction::VotedReconstruction(Mat &offset_map, Mat &patch_img, int patch_size) :
         _offset_map(offset_map), _patch_img(patch_img), _patch_size(patch_size) { }
 
@@ -22,12 +28,21 @@ Mat VotedReconstruction::reconstruct() const {
             Rect matching_patch_rect(match_x, match_y, _patch_size, _patch_size);
             Mat matching_patch = _patch_img(matching_patch_rect);
 
+            float weight;
+            if (WEIGHTED_BY_SIMILARITY) {
+                float normalized_dist = offset_map_entry[2] / (_patch_size  * _patch_size);
+                weight = exp(-normalized_dist / 2 * SIGMA_SQR);
+            }
+            else {
+                weight = 1;
+            }
             // Add to all pixels at once.
             Rect current_patch_rect(x, y, _patch_size, _patch_size);
-            reconstructed(current_patch_rect) += matching_patch;
+
+            reconstructed(current_patch_rect) += weight * matching_patch;
 
             // Remember for every pixel, how many patches were added up for later division.
-            count(current_patch_rect) += 1;
+            count(current_patch_rect) += weight;
         }
     }
 
