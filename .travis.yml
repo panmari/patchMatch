@@ -1,16 +1,14 @@
+sudo: false
 language: cpp
 compiler: gcc
-before_script:
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - sudo apt-get -qq update
-  - sudo apt-get -qq install g++-4.8
-  - git clone https://github.com/Itseez/opencv.git
-  - cd opencv
-  - mkdir build
-  - cd build
-  - cmake ..
-  - make -j8
-  - sudo make -j8 install
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - cmake
+    - g++-4.8
+    - libopencv-dev
 
 script:
   - cmake
