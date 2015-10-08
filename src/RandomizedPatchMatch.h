@@ -15,7 +15,7 @@ public:
     cv::Mat _offset_map;
 
 private:
-    std::vector<cv::Mat> _img_pyr, _img2_pyr;
+    std::vector<cv::Mat> _img_pyr, _img2_pyr, _offset_map_pyr;
     const int _patchSize, _max_sarch_radius;
     // Minimum size image in pyramid is 2x patchSize of lower dimension (or larger).
     const int _nr_scales;

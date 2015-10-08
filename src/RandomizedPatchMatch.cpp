@@ -30,6 +30,7 @@ RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patc
         _nr_scales((int) log2(std::min(img.cols, img.rows) / (2.f * patchSize))) {
     buildPyramid(img, _img_pyr, _nr_scales);
     buildPyramid(img2, _img2_pyr, _nr_scales);
+    _offset_map_pyr.resize(_nr_scales + 1);
 }
 
 cv::Mat RandomizedPatchMatch::match() {
@@ -38,7 +39,7 @@ cv::Mat RandomizedPatchMatch::match() {
     for (int s = _nr_scales; s >= 0; s--) {
         Mat img = _img_pyr[s];
         Mat img2 = _img2_pyr[s];
-        Mat offset_map;
+        Mat offset_map = _offset_map_pyr[s];
         initializeWithRandomOffsets(img, img2, offset_map);
         bool isFlipped = false;
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
