@@ -8,10 +8,16 @@ addons:
     packages:
     - cmake
     - g++-4.8
-    - libopencv-dev
 
 before_script:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - git clone https://github.com/Itseez/opencv.git
+  - cd opencv
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make -j8
+  - cd ../..
 script:
   - cmake .
   - make
