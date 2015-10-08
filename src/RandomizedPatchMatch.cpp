@@ -50,14 +50,15 @@ cv::Mat RandomizedPatchMatch::match() {
                 Mat lower_offset_map = _offset_map_pyr[s + 1];
                 for (int x = 0; x < lower_offset_map.cols; x++) {
                     for (int y = 0; y < lower_offset_map.rows; y++) {
-                        // Check 4 corresponding pixels in higher resolution offset image.
+                        // Only check one corresponding pixel, will get propagated to adjacent pixels.
+                        // TODO: Check 4 corresponding pixels in higher resolution offset image.
                         Vec3f lower_offset = lower_offset_map.at<Vec3f>(y, x);
                         Point candidate_offset(lower_offset[0] * 2, lower_offset[1] * 2);
                         Rect candidate_rect((lower_offset[0] + x) * 2, (lower_offset[1] + y) * 2,
                                             _patchSize, _patchSize);
                         Rect current_patch_rect(x * 2, y * 2, _patchSize, _patchSize);
                         Mat current_patch = img(current_patch_rect);
-                        Vec3f* current_offset = offset_map.ptr<Vec3f>(y, x);
+                        Vec3f* current_offset = offset_map.ptr<Vec3f>(y * 2, x * 2);
                         updateOffsetMapEntryIfBetter(current_patch, candidate_offset,
                                                      candidate_rect, img2, current_offset);
                     }
