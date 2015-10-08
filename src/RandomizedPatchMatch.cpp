@@ -40,7 +40,7 @@ cv::Mat RandomizedPatchMatch::match() {
     for (int s = _nr_scales; s >= 0; s--) {
         Mat img = _img_pyr[s];
         Mat img2 = _img2_pyr[s];
-        Mat offset_map = _offset_map_pyr[s];
+        Mat offset_map;
         initializeWithRandomOffsets(img, img2, offset_map);
         bool isFlipped = false;
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
@@ -123,9 +123,9 @@ cv::Mat RandomizedPatchMatch::match() {
             // Correct orientation if we're still in flipped state.
             flip(offset_map, offset_map, -1);
         }
-        _offset_map = offset_map;
+        _offset_map_pyr[s] = offset_map;
     }
-    return _offset_map;
+    return _offset_map_pyr[0];
 }
 
 void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candidate_offset,
