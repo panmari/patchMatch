@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "opencv2/ts.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "../src/RandomizedPatchMatch.h"

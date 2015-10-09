@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "opencv2/ts.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "../src/HoleFilling.h"
@@ -27,5 +25,4 @@ TEST(hole_filling_test, square_hole_on_random_image)
     Rect expected_target_rect(Point(50 - 6, 50 - 6), Point(60 + 6, 60 + 6));
 
     ASSERT_EQ(expected_target_rect, hf._target_rect);
-    //ASSERT_EQ(img(expected_target_rect), hf._target_area);
 }

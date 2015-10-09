@@ -192,7 +192,6 @@ void RandomizedPatchMatch::dumpOffsetMapToFile(Mat &offset_map, String filename_
     // Dump unnormalized values for inspection.
     imwrite("xoffsets" + filename_modifier + ".exr", out[0]);
     imwrite("yoffsets" + filename_modifier + ".exr", out[1]);
-    std::cout << sum(out[2]) << std::endl;
     imwrite("min_dist_img" + filename_modifier + ".exr", out[2]);
     normalize(out[2], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
     imwrite("min_dist_img_normalized" + filename_modifier + ".exr", normed);
