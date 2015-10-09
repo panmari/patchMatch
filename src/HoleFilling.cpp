@@ -24,28 +24,20 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole
     buildPyramid(img, _img_pyr, _nr_scales);
     buildPyramid(hole, _hole_pyr, _nr_scales);
 
-    _target_rect = computeTargetRect(img, hole, patch_size);
+    while (sum(_hole_pyr[_nr_scales])[0] == 0) {
+        _nr_scales--;
+    }
 
-    Rect low_res_target_rect = computeTargetRect(_img_pyr[_nr_scales], _hole_pyr[_nr_scales], patch_size);
+    _target_area_pyr = std::vector<Mat>(_nr_scales + 1);
+    
+    // Set the mean color of the whole image as initial guess.
+    Mat mask = _hole_pyr[_nr_scales];
     Mat initial_guess = _img_pyr[_nr_scales].clone();
-    Mat mask, not_mask;
-    mask = _hole_pyr[_nr_scales];
-    bitwise_not(mask, not_mask);
-    initial_guess.setTo(Scalar(1, 0, 0), _hole_pyr[_nr_scales]);
-    // Only preserve colors for mask pixels
-    // Fill with average color
-    // TODO: Do something better.
+    Rect low_res_target_rect = computeTargetRect(_img_pyr[_nr_scales], mask, patch_size);
+    Scalar mean_color = sum(_img_pyr[_nr_scales]) / (_img_pyr[_nr_scales].cols * _img_pyr[_nr_scales].rows);
+    initial_guess.setTo(mean_color, mask);
+    initial_guess(low_res_target_rect).copyTo(_target_area_pyr[_nr_scales]);
 
-    initial_guess(low_res_target_rect).copyTo(_target_area);
-
-//    buildPyramid(img, _img_pyr, _nr_scales);
-//    _offset_map_pyr.resize(_nr_scales + 1);
-
-    // TODO: Construct NNF for img, fill hole iteratively by reconstructing the pixels within using matches from the NNF.
-    // Questions: Is only used for pixels inside hole? May whole pixels participate in NNF?
-    // - Probably yes, but when reconstructing, the contribution of these pixels is weighted down by
-    // alpha_b = 1.3 ^ -dist (distance to edge).
-    //
 }
 
 Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) {

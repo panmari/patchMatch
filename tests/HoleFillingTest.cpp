@@ -28,7 +28,7 @@ TEST(hole_filling_test, square_hole_on_random_image_should_produce_correct_targe
 
     Rect expected_target_rect(Point(50 - 6, 50 - 6), Point(60 + 6, 60 + 6));
 
-    ASSERT_EQ(expected_target_rect, hf._target_rect);
+    ASSERT_EQ(expected_target_rect, hf.computeTargetRect(img, hole, patch_size));
 }
 
 TEST(hole_filling_test, square_hole_on_random_image)
@@ -40,9 +40,16 @@ TEST(hole_filling_test, square_hole_on_random_image)
     // Add some hole
     Mat hole = Mat::zeros(img.size(), CV_8U);
 
-    hole(Rect(50, 50, 10, 10)) = 1;
+    hole(Rect(65, 70, 10, 10)) = 1;
     int patch_size = 7;
     HoleFilling hf(img, hole, patch_size);
 
-    imwrite("test_hole_filling.exr", hf._target_area);
+    Mat bgr;
+    cvtColor(hf._target_area_pyr[hf._nr_scales], bgr, CV_Lab2BGR);
+    imwrite("test_hole_filling.exr", bgr);
+    int i = 0;
+    for (Mat m: hf._hole_pyr) {
+        imwrite("hole" + std::to_string(i) + ".exr", m);
+        i++;
+    }
 }
