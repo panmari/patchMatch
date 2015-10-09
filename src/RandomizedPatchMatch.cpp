@@ -141,20 +141,20 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candi
 
 }
 
-void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &img, Mat &img2, Mat &offset_map) {
+void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &target_img, Mat &source_img, Mat &offset_map) {
     // Seed random;
-    srand(img.rows * img.cols);
-    offset_map.create(img.rows - _patchSize, img.cols - _patchSize, CV_32FC3);
+    srand(target_img.rows * target_img.cols);
+    offset_map.create(target_img.rows - _patchSize, target_img.cols - _patchSize, CV_32FC3);
     for (int x = 0; x < offset_map.cols; x++) {
         for (int y = 0; y < offset_map.rows; y++) {
             // Choose offset carfully, so resulting point (when added to current coordinate), is not outside image.
-            int randomX = (rand() % offset_map.cols) - x;
-            int randomY = (rand() % offset_map.rows) - y;
+            int randomX = (rand() % (source_img.cols - _patchSize)) - x;
+            int randomY = (rand() % (source_img.rows - _patchSize)) - y;
 
             // TODO: Refactor this to store at every point [Point, double]
             Rect currentPatchRect(x, y, _patchSize, _patchSize);
-            Mat currentPatch = img(currentPatchRect);
-            Mat randomPatch = img2(Rect(x + randomX, y + randomY, _patchSize, _patchSize));
+            Mat currentPatch = target_img(currentPatchRect);
+            Mat randomPatch = source_img(Rect(x + randomX, y + randomY, _patchSize, _patchSize));
             float initalSsd = (float) ssd(currentPatch, randomPatch);
             offset_map.at<Vec3f>(y, x) = Vec3f(randomX, randomY, initalSsd);
         }

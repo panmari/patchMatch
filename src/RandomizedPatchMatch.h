@@ -22,7 +22,7 @@ private:
 
     // Mainly for debugging, dumps offset map to file.
     void dumpOffsetMapToFile(cv::Mat &offset_map, cv::String filename_modifier) const;
-    void initializeWithRandomOffsets(cv::Mat &img, cv::Mat &img2, cv::Mat &offset_map);
+    void initializeWithRandomOffsets(cv::Mat &target_img, cv::Mat &source_img, cv::Mat &offset_map);
     void updateOffsetMapEntryIfBetter(cv::Mat &patch, cv::Point &candidate_offset,
                                       cv::Rect &candiadate_rect, cv::Mat &other_img, cv::Vec3f *offset_map_entry);
 };
