@@ -25,7 +25,8 @@ Mat TrivialReconstruction::reconstruct() const {
 
             Rect current_patch_rect(x, y, _patch_size, _patch_size);
 
-            reconstructed(current_patch_rect) = matching_patch;
+            // Simple assignment doesn't work here, need to copy explicitly.
+            matching_patch.copyTo(reconstructed(current_patch_rect));
         }
     }
 
