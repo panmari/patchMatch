@@ -17,6 +17,7 @@ using cv::Rect;
 using cv::Scalar;
 using cv::String;
 using cv::split;
+using pmutil::convert_for_computation;
 using pmutil::ssd;
 using std::cout;
 using std::endl;
@@ -41,8 +42,8 @@ int main( int argc, char** argv )
     original.convertTo(original, CV_32FC3, 1 / 255.f);
 
     // For fast testing, make it tiny
-    convert_for_computation(img);
-    convert_for_computation(img2);
+    convert_for_computation(img, RESIZE_FACTOR);
+    convert_for_computation(img2, RESIZE_FACTOR);
 
     cout << "Size of img1: " << img.size() << endl;
     cout << "Size of img2: " << img2.size() << endl;
@@ -65,17 +66,4 @@ int main( int argc, char** argv )
     cout << "SSD trivial reconstruction: " << ssd(reconstructed, original) << endl;
     cout << "SSD voted reconstruction: " << ssd(reconstructed2, original) << endl;
     return 0;
-}
-
-/**
- * Convert images to lab retrieved from imread.
- * L*a*b has the following ranges for each channel:
- * L: [0, 100]
- * a*: [-170, 100]
- * b*: [-100, 150]
- */
-void convert_for_computation(Mat &img) {
-    resize(img, img, Size(), RESIZE_FACTOR, RESIZE_FACTOR);
-    img.convertTo(img, CV_32FC3, 1 / 255.f);
-    cvtColor(img, img, CV_BGR2Lab);
 }

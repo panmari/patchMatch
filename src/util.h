@@ -7,6 +7,7 @@ namespace pmutil {
 
     using cv::Mat;
     using cv::Scalar;
+    using cv::Size;
 
     /**
      * Computes the sum of squared differences of the two given matrices/images. Assumes that they have the same size
@@ -18,6 +19,21 @@ namespace pmutil {
         Scalar ssd_channels = sum(squares);
         double ssd = ssd_channels[0] + ssd_channels[1] + ssd_channels[2];
         return ssd;
+    }
+
+    /**
+     * Convert images to lab retrieved from imread.
+     * L*a*b has the following ranges for each channel:
+     * L: [0, 100]
+     * a*: [-170, 100]
+     * b*: [-100, 150]
+     */
+    static void convert_for_computation(Mat &img, float resize_factor) {
+        if (resize_factor != 1.f) {
+            resize(img, img, Size(), resize_factor, resize_factor);
+        }
+        img.convertTo(img, CV_32FC3, 1 / 255.f);
+        cvtColor(img, img, CV_BGR2Lab);
     }
 }
 

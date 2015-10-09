@@ -18,5 +18,4 @@ private:
     const int _nr_scales;
 };
 
-
 #endif //PATCHMATCH_HOLEFILLING_H

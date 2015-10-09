@@ -4,6 +4,7 @@ using cv::findNonZero;
 using cv::Mat;
 using cv::Point;
 using cv::Rect;
+using cv::Scalar;
 using std::vector;
 using std::max_element;
 using std::min_element;
@@ -23,8 +24,19 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole
     buildPyramid(img, _img_pyr, _nr_scales);
     buildPyramid(hole, _hole_pyr, _nr_scales);
 
-    _target_rect = computeTargetRect(img, hole ,patch_size);
-    img(_target_rect).copyTo(_target_area);
+    _target_rect = computeTargetRect(img, hole, patch_size);
+
+    Rect low_res_target_rect = computeTargetRect(_img_pyr[_nr_scales], _hole_pyr[_nr_scales], patch_size);
+    Mat initial_guess = _img_pyr[_nr_scales].clone();
+    Mat mask, not_mask;
+    mask = _hole_pyr[_nr_scales];
+    bitwise_not(mask, not_mask);
+    initial_guess.setTo(Scalar(1, 0, 0), _hole_pyr[_nr_scales]);
+    // Only preserve colors for mask pixels
+    // Fill with average color
+    // TODO: Do something better.
+
+    initial_guess(low_res_target_rect).copyTo(_target_area);
 
 //    buildPyramid(img, _img_pyr, _nr_scales);
 //    _offset_map_pyr.resize(_nr_scales + 1);
@@ -39,10 +51,10 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole
 Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) {
     vector<Point> non_zero_locations;
     findNonZero(hole, non_zero_locations);
-    int min_x = (*min_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_x)).x;
-    int max_x = (*max_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_x)).x;
-    int min_y = (*min_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_y)).y;
-    int max_y = (*max_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_y)).y;
+    int min_x = min_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_x)->x;
+    int max_x = max_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_x)->x;
+    int min_y = min_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_y)->y;
+    int max_y = max_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_y)->y;
 
 
     Rect target_rect(Point(min_x - patch_size + 1, min_y - patch_size + 1),
