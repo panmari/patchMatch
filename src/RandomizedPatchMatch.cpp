@@ -1,9 +1,6 @@
-//
-// Created by moser on 02.10.15.
-//
-
 #include "RandomizedPatchMatch.h"
 #include "opencv2/highgui/highgui.hpp"
+#include "util.h"
 #include <iostream>
 
 using cv::addWeighted;
@@ -17,11 +14,10 @@ using cv::String;
 using cv::Rect;
 using cv::RNG;
 using cv::Vec3f;
-
 using std::max;
+using pmutil::ssd;
 
 const int ITERATIONS_PER_SCALE = 5;
-const bool NORMALIZED_DISTANCE = false;
 const bool RANDOM_SEARCH = true;
 const bool MERGE_UPSAMPLED_OFFSETS = true;
 const float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
@@ -144,28 +140,6 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candi
     }
 
 }
-
-double RandomizedPatchMatch::ssd(cv::Mat &patch, cv::Mat &patch2) const {
-    Mat tmp = patch.clone();
-    addWeighted(patch, 1, patch2, -1, 0, tmp);
-    Mat squares = tmp.mul(tmp);
-    Scalar ssd_channels = sum(squares);
-    double ssd = ssd_channels[0] + ssd_channels[1] + ssd_channels[2];
-    if (NORMALIZED_DISTANCE) {
-        patch.copyTo(tmp);
-        patch.mul(tmp);
-        Scalar squares_patch = sum(tmp);
-
-        patch2.copyTo(tmp);
-        patch2.mul(tmp);
-        Scalar squares_patch2 = sum(tmp);
-        double normalization = sqrt((squares_patch[0] + squares_patch[1] + squares_patch[2]) *
-                                    (squares_patch2[0] + squares_patch2[1] + squares_patch2[2]));
-        ssd /= normalization;
-    }
-    return ssd;
-}
-
 
 void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &img, Mat &img2, Mat &offset_map) {
     // Seed random;

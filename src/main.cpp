@@ -4,6 +4,7 @@
 #include "RandomizedPatchMatch.h"
 #include "TrivialReconstruction.h"
 #include "VotedReconstruction.h"
+#include "util.h"
 
 #include <iostream>
 
@@ -12,13 +13,16 @@ using cv::Mat;
 using cv::Size;
 using cv::namedWindow;
 using cv::imread;
-using std::cout;
-using std::endl;
+using cv::Rect;
 using cv::Scalar;
 using cv::String;
 using cv::split;
+using pmutil::ssd;
+using std::cout;
+using std::endl;
 
-String result_window = "Result window";
+const float RESIZE_FACTOR = 0.5;
+const int PATCH_SIZE = 7;
 void convert_for_computation(Mat &img);
 
 int main( int argc, char** argv )
@@ -31,6 +35,10 @@ int main( int argc, char** argv )
         printf("Need two pictures as arguments.\n");
         return -1;
     }
+    // For later comparison.
+    Mat original;
+    resize(img, original, Size(), RESIZE_FACTOR, RESIZE_FACTOR);
+    original.convertTo(original, CV_32FC3, 1 / 255.f);
 
     // For fast testing, make it tiny
     convert_for_computation(img);
@@ -39,32 +47,35 @@ int main( int argc, char** argv )
     cout << "Size of img1: " << img.size() << endl;
     cout << "Size of img2: " << img2.size() << endl;
 
-    RandomizedPatchMatch rpm(img, img2, 7);
+    RandomizedPatchMatch rpm(img, img2, PATCH_SIZE);
 
     ExhaustivePatchMatch epm(img, img2);
 
     Mat minDistImg = rpm.match();
-    //Mat minDistImg = epm.match(7);
+    //Mat minDistImg = epm.match(PATCH_SIZE);
 
-    TrivialReconstruction tr(minDistImg, img2);
+    TrivialReconstruction tr(minDistImg, img2, PATCH_SIZE);
     Mat reconstructed = tr.reconstruct();
     imwrite("reconstructed.exr", reconstructed);
 
-    VotedReconstruction vr(minDistImg, img2, 7);
+    VotedReconstruction vr(minDistImg, img2, PATCH_SIZE);
     Mat reconstructed2 = vr.reconstruct();
     imwrite("reconstructed_voted.exr", reconstructed2);
-    Mat diff;
-    addWeighted(img, 1, reconstructed2, -1, 0, diff);
-    Mat diff_sqr = diff.mul(diff);
-    Scalar per_channel_diff = sum(diff_sqr);
-    cout << per_channel_diff[0] + per_channel_diff[1] + per_channel_diff[2] << endl;
+
+    cout << "SSD trivial reconstruction: " << ssd(reconstructed, original) << endl;
+    cout << "SSD voted reconstruction: " << ssd(reconstructed2, original) << endl;
     return 0;
 }
 
-// Convert images to lab, default returned by imread is BGR.
+/**
+ * Convert images to lab retrieved from imread.
+ * L*a*b has the following ranges for each channel:
+ * L: [0, 100]
+ * a*: [-170, 100]
+ * b*: [-100, 150]
+ */
 void convert_for_computation(Mat &img) {
-    const float resizeFactor = 0.5;
-    resize(img, img, Size(), resizeFactor, resizeFactor);
+    resize(img, img, Size(), RESIZE_FACTOR, RESIZE_FACTOR);
     img.convertTo(img, CV_32FC3, 1 / 255.f);
     cvtColor(img, img, CV_BGR2Lab);
 }

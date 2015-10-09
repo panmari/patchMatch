@@ -2,15 +2,14 @@
 #include <iostream>
 
 using cv::Mat;
+using cv::Rect;
 using cv::Vec3f;
 
-TrivialReconstruction::TrivialReconstruction(Mat &offset_map, Mat &patch_img) :
-        _offset_map(offset_map), _patch_img(patch_img) { }
+TrivialReconstruction::TrivialReconstruction(Mat &offset_map, Mat &patch_img, int patch_size) :
+        _offset_map(offset_map), _patch_img(patch_img), _patch_size(patch_size) { }
 
 Mat TrivialReconstruction::reconstruct() const {
-    Mat reconstructed;
-    reconstructed.create(_offset_map.size(), CV_32FC3);
-    std::cout << "Size of image: " << _patch_img.size() << std::endl;
+    Mat reconstructed = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
     for (int x = 0; x < _offset_map.cols; x++) {
         for (int y = 0; y < _offset_map.rows; y++) {
             Vec3f offset_map_entry = _offset_map.at<Vec3f>(y, x);
@@ -21,8 +20,12 @@ Mat TrivialReconstruction::reconstruct() const {
                 std::cout << "Not inside image: (" << match_x << "," << match_y << ")" << std::endl;
             }
 
-            Vec3f best_match = _patch_img.at<Vec3f>(match_y, match_x);
-            reconstructed.at<Vec3f>(y, x) = best_match;
+            Rect matching_patch_rect(match_x, match_y, _patch_size, _patch_size);
+            Mat matching_patch = _patch_img(matching_patch_rect);
+
+            Rect current_patch_rect(x, y, _patch_size, _patch_size);
+
+            reconstructed(current_patch_rect) = matching_patch;
         }
     }
 

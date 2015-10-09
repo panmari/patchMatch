@@ -10,7 +10,7 @@ using std::vector;
  * Patches with higher similarity have higher weights in reconstruction. If false, ever patch has the same weight (1).
  */
 const bool WEIGHTED_BY_SIMILARITY = true;
-const float SIGMA_SQR = 3;
+const float SIGMA_SQR = 1;
 
 VotedReconstruction::VotedReconstruction(Mat &offset_map, Mat &patch_img, int patch_size) :
         _offset_map(offset_map), _patch_img(patch_img), _patch_size(patch_size) { }
