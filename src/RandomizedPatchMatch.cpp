@@ -2,6 +2,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "util.h"
 #include <iostream>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 using cv::addWeighted;
 using cv::buildPyramid;

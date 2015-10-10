@@ -32,7 +32,7 @@ int main( int argc, char** argv )
     Mat img = imread( argv[1], 1 );
     Mat img2 = imread( argv[2], 1);
 
-    if (!img.data or !img2.data) {
+    if (!img.data || !img2.data) {
         printf("Need two pictures as arguments.\n");
         return -1;
     }
