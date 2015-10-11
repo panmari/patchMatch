@@ -1,4 +1,6 @@
 #include "HoleFilling.h"
+#include "RandomizedPatchMatch.h"
+#include "VotedReconstruction.h"
 
 using cv::findNonZero;
 using cv::Mat;
@@ -29,7 +31,7 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole
     }
 
     _target_area_pyr = std::vector<Mat>(_nr_scales + 1);
-    
+
     // Set the mean color of the whole image as initial guess.
     Mat mask = _hole_pyr[_nr_scales];
     Mat initial_guess = _img_pyr[_nr_scales].clone();
@@ -40,7 +42,18 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole
 
 }
 
-Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) {
+Mat HoleFilling::run() {
+    // Set the source to full black in hole.
+    Mat source = _img_pyr[_nr_scales];
+    source.setTo(Scalar(0, 0 ,0), _hole_pyr[_nr_scales]);
+    RandomizedPatchMatch rmp(source, _target_area_pyr[_nr_scales], _patch_size);
+    Mat offset_map = rmp.match();
+    VotedReconstruction vr(offset_map, source, _patch_size);
+    Mat reconstructed = vr.reconstruct();
+    return reconstructed;
+}
+
+Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
     vector<Point> non_zero_locations;
     findNonZero(hole, non_zero_locations);
     int min_x = min_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_x)->x;
