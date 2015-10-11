@@ -24,11 +24,11 @@ const bool RANDOM_SEARCH = true;
 const bool MERGE_UPSAMPLED_OFFSETS = true;
 const float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
-RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize) :
-        _patchSize(patchSize), _max_sarch_radius(max(img2.cols, img2.rows)),
-        _nr_scales((int) log2(std::min(img.cols, img.rows) / (2.f * patchSize))) {
-    buildPyramid(img, _img_pyr, _nr_scales);
-    buildPyramid(img2, _img2_pyr, _nr_scales);
+RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &source, cv::Mat &target, int patch_size) :
+        _patch_size(patch_size), _max_search_radius(max(target.cols, target.rows)),
+        _nr_scales(findNumberScales(source, target, patch_size)) {
+    buildPyramid(source, _source_pyr, _nr_scales);
+    buildPyramid(target, _target_pyr, _nr_scales);
     _offset_map_pyr.resize(_nr_scales + 1);
 }
 
@@ -36,10 +36,10 @@ cv::Mat RandomizedPatchMatch::match() {
     RNG rng( 0xFFFFFFFF );
 
     for (int s = _nr_scales; s >= 0; s--) {
-        Mat img = _img_pyr[s];
-        Mat img2 = _img2_pyr[s];
+        Mat source = _source_pyr[s];
+        Mat target = _target_pyr[s];
         Mat offset_map;
-        initializeWithRandomOffsets(img, img2, offset_map);
+        initializeWithRandomOffsets(source, target, offset_map);
         bool isFlipped = false;
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
             // After half the iterations, merge the lower resolution offset where they're better.
@@ -53,12 +53,12 @@ cv::Mat RandomizedPatchMatch::match() {
                         Vec3f lower_offset = lower_offset_map.at<Vec3f>(y, x);
                         Point candidate_offset(lower_offset[0] * 2, lower_offset[1] * 2);
                         Rect candidate_rect((lower_offset[0] + x) * 2, (lower_offset[1] + y) * 2,
-                                            _patchSize, _patchSize);
-                        Rect current_patch_rect(x * 2, y * 2, _patchSize, _patchSize);
-                        Mat current_patch = img(current_patch_rect);
+                                            _patch_size, _patch_size);
+                        Rect current_patch_rect(x * 2, y * 2, _patch_size, _patch_size);
+                        Mat current_patch = source(current_patch_rect);
                         Vec3f* current_offset = offset_map.ptr<Vec3f>(y * 2, x * 2);
                         updateOffsetMapEntryIfBetter(current_patch, candidate_offset,
-                                                     candidate_rect, img2, current_offset);
+                                                     candidate_rect, target, current_offset);
                     }
                 }
             }
@@ -75,36 +75,36 @@ cv::Mat RandomizedPatchMatch::match() {
                         x_unflipped = x;
                         y_unflipped = y;
                     }
-                    Rect currentPatchRect(x_unflipped, y_unflipped, _patchSize, _patchSize);
-                    Mat currentPatch = img(currentPatchRect);
+                    Rect currentPatchRect(x_unflipped, y_unflipped, _patch_size, _patch_size);
+                    Mat currentPatch = source(currentPatchRect);
 
                     if (x > 0) {
                         Vec3f offsetLeft = offset_map.at<Vec3f>(y, x - 1);
                         Rect rectLeft((int) offsetLeft[0] + x_unflipped, (int) offsetLeft[1] + y_unflipped,
-                                      _patchSize, _patchSize);
+                                      _patch_size, _patch_size);
                         Point offsetLeftPoint(offsetLeft[0], offsetLeft[1]);
-                        updateOffsetMapEntryIfBetter(currentPatch, offsetLeftPoint, rectLeft, img2, offset_map_entry);
+                        updateOffsetMapEntryIfBetter(currentPatch, offsetLeftPoint, rectLeft, target, offset_map_entry);
                     }
                     if (y > 0) {
                         Vec3f offsetUp = offset_map.at<Vec3f>(y - 1, x);
                         Rect rectUp((int) offsetUp[0] + x_unflipped, (int) offsetUp[1] + y_unflipped,
-                                    _patchSize, _patchSize);
+                                    _patch_size, _patch_size);
                         Point offsetUpPoint(offsetUp[0], offsetUp[1]);
-                        updateOffsetMapEntryIfBetter(currentPatch, offsetUpPoint, rectUp, img2, offset_map_entry);
+                        updateOffsetMapEntryIfBetter(currentPatch, offsetUpPoint, rectUp, target, offset_map_entry);
                     }
 
                     Point current_offset((*offset_map_entry)[0], (*offset_map_entry)[1]);
 
                     if (RANDOM_SEARCH) {
-                        float current_search_radius = _max_sarch_radius;
+                        float current_search_radius = _max_search_radius;
                         while (current_search_radius > 1) {
                             Point random_point = Point(rng.uniform(-1.f, 1.f) * current_search_radius,
                                                        rng.uniform(-1.f, 1.f) * current_search_radius);
                             Point random_offset = current_offset + random_point;
                             Rect random_rect(x_unflipped + random_offset.x,
-                                             y_unflipped + random_offset.y, _patchSize, _patchSize);
+                                             y_unflipped + random_offset.y, _patch_size, _patch_size);
 
-                            updateOffsetMapEntryIfBetter(currentPatch, random_offset, random_rect, img2,
+                            updateOffsetMapEntryIfBetter(currentPatch, random_offset, random_rect, target,
                                                          offset_map_entry);
 
                             current_search_radius *= ALPHA;
@@ -143,20 +143,20 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candi
 
 }
 
-void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &target_img, Mat &source_img, Mat &offset_map) {
+void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &source_img, Mat &target_img, Mat &offset_map) {
     // Seed random;
     srand(target_img.rows * target_img.cols);
-    offset_map.create(target_img.rows - _patchSize, target_img.cols - _patchSize, CV_32FC3);
+    offset_map.create(target_img.rows - _patch_size, target_img.cols - _patch_size, CV_32FC3);
     for (int x = 0; x < offset_map.cols; x++) {
         for (int y = 0; y < offset_map.rows; y++) {
             // Choose offset carfully, so resulting point (when added to current coordinate), is not outside image.
-            int randomX = (rand() % (source_img.cols - _patchSize)) - x;
-            int randomY = (rand() % (source_img.rows - _patchSize)) - y;
+            int randomX = (rand() % (source_img.cols - _patch_size)) - x;
+            int randomY = (rand() % (source_img.rows - _patch_size)) - y;
 
             // TODO: Refactor this to store at every point [Point, double]
-            Rect currentPatchRect(x, y, _patchSize, _patchSize);
+            Rect currentPatchRect(x, y, _patch_size, _patch_size);
             Mat currentPatch = target_img(currentPatchRect);
-            Mat randomPatch = source_img(Rect(x + randomX, y + randomY, _patchSize, _patchSize));
+            Mat randomPatch = source_img(Rect(x + randomX, y + randomY, _patch_size, _patch_size));
             float initalSsd = (float) ssd(currentPatch, randomPatch);
             offset_map.at<Vec3f>(y, x) = Vec3f(randomX, randomY, initalSsd);
         }
@@ -197,4 +197,9 @@ void RandomizedPatchMatch::dumpOffsetMapToFile(Mat &offset_map, String filename_
     imwrite("min_dist_img" + filename_modifier + ".exr", out[2]);
     normalize(out[2], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
     imwrite("min_dist_img_normalized" + filename_modifier + ".exr", normed);
+}
+
+int RandomizedPatchMatch::findNumberScales(Mat &source, Mat &target, int patch_size) const {
+    int min_dimension = std::min(std::min(std::min(source.cols, source.rows), target.cols), target.rows);
+    return (int) log2( min_dimension/ (2.f * patch_size));
 }

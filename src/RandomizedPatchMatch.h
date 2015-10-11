@@ -10,13 +10,16 @@
 class RandomizedPatchMatch {
 
 public:
-    RandomizedPatchMatch(cv::Mat &img, cv::Mat &img2, int patchSize);
+    RandomizedPatchMatch(cv::Mat &source, cv::Mat &target, int patch_size);
     cv::Mat match();
     cv::Mat _offset_map;
+    // Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
+    // their minimal dimension.
+    int findNumberScales(cv::Mat &source, cv::Mat &target, int patch_size) const;
 
 private:
-    std::vector<cv::Mat> _img_pyr, _img2_pyr, _offset_map_pyr;
-    const int _patchSize, _max_sarch_radius;
+    std::vector<cv::Mat> _source_pyr, _target_pyr, _offset_map_pyr;
+    const int _patch_size, _max_search_radius;
     // Minimum size image in pyramid is 2x patchSize of lower dimension (or larger).
     const int _nr_scales;
 
@@ -25,6 +28,7 @@ private:
     void initializeWithRandomOffsets(cv::Mat &target_img, cv::Mat &source_img, cv::Mat &offset_map);
     void updateOffsetMapEntryIfBetter(cv::Mat &patch, cv::Point &candidate_offset,
                                       cv::Rect &candiadate_rect, cv::Mat &other_img, cv::Vec3f *offset_map_entry);
+
 };
 
 
