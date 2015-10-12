@@ -16,7 +16,7 @@ public:
 private:
     cv::Mat _img, _hole;
     const int _patch_size;
-
+    cv::Mat upscaleSolution(cv::Mat &previous_solution) const;
     cv::Rect computeTargetRect(cv::Mat &img, cv::Mat &hole, int patch_size) const;
 };
 

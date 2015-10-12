@@ -12,7 +12,7 @@ class RandomizedPatchMatch {
 public:
     RandomizedPatchMatch(cv::Mat &source, cv::Mat &target, int patch_size);
     cv::Mat match();
-    cv::Mat _offset_map;
+
     /* Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
      * their minimal dimension.
      */

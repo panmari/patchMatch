@@ -65,7 +65,7 @@ TEST(randomized_patch_match_test, all_offsets_inside_image_on_initialized_offset
     randu(img2, Scalar::all(0.0), Scalar::all(1.0f));
 
     RandomizedPatchMatch rpm(img1, img2, 7);
-    Mat diff = rpm._offset_map;
+    Mat diff = rpm.match();
     for(int x = 0; x < diff.cols; x++) {
         for(int y = 0; y < diff.rows; y++) {
             Vec3f d = diff.at<Vec3f>(y, x);

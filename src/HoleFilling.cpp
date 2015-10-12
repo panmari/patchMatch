@@ -18,7 +18,8 @@ using std::min_element;
 /**
  * Number of iterations for expectation maximization, in our case reconstruction and building of NNF.
  */
-const int EM_STEPS = 20;
+const int EM_STEPS = 10;
+const bool WEXLER_UPSCALE = false;
 const bool DUMP_INTERMEDIARY_RESULTS = false;
 
 namespace {
@@ -31,11 +32,13 @@ namespace {
     }
 }
 
-HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole(hole), _patch_size(patch_size),
+HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) :
+        _img(img), _hole(hole), _patch_size(patch_size),
         _nr_scales((int) log2(std::min(img.cols, img.rows) / (2.f * patch_size))) {
     buildPyramid(img, _img_pyr, _nr_scales);
     buildPyramid(hole, _hole_pyr, _nr_scales);
 
+    // Skip scales where the hole vanishes, i. e. makes up 0 pixels.
     while (sum(_hole_pyr[_nr_scales])[0] == 0) {
         _nr_scales--;
     }
@@ -62,10 +65,7 @@ Mat HoleFilling::run() {
 
         } else {
             Mat previous_solution = solutionFor(scale + 1);
-            Mat upscaled_solution;
-            // TODO: There is actually a better method for upscaling, see Wexler2007 Section 3.2
-            pyrUp(previous_solution, upscaled_solution);
-            pmutil::imwrite_lab(str(format("gitter_hole_upscaled_scale_%d.exr") % scale), upscaled_solution);
+            Mat upscaled_solution = upscaleSolution(previous_solution);
             // Copy upscaled solution to current target area.
             upscaled_solution(_target_rect_pyr[scale]).copyTo(_target_area_pyr[scale]);
         }
@@ -88,6 +88,17 @@ Mat HoleFilling::run() {
         }
     }
     return solutionFor(0);
+}
+
+Mat HoleFilling::upscaleSolution(Mat &previous_solution) const {
+    Mat upscaled_solution;
+    if (WEXLER_UPSCALE) {
+        // TODO: There is actually a better method for upscaling, see Wexler2007 Section 3.2
+    } else {
+        pyrUp(previous_solution, upscaled_solution);
+    }
+    // pmutil::imwrite_lab(str(format("gitter_hole_upscaled_scale_%d.exr") % scale), upscaled_solution);
+    return upscaled_solution;
 }
 
 Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
