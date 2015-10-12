@@ -13,6 +13,10 @@ using std::vector;
 using std::max_element;
 using std::min_element;
 
+/**
+ * Number of iterations for expectation maximizationm, in our case reconstruction and building of NNF.
+ */
+const int EM_STEPS = 20;
 namespace {
     static bool compare_by_x(Point a, Point b) {
         return a.x < b.x;
@@ -45,21 +49,27 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole
     Scalar mean_color = sum(_img_pyr[_nr_scales]) / (_img_pyr[_nr_scales].cols * _img_pyr[_nr_scales].rows);
     initial_guess.setTo(mean_color, _hole_pyr[_nr_scales]);
     initial_guess(low_res_target_rect).copyTo(_target_area_pyr[_nr_scales]);
-
 }
 
 Mat HoleFilling::run() {
     // Set the source to full black in hole.
     Mat source = _img_pyr[_nr_scales];
-    source.setTo(Scalar(0, 0 ,0), _hole_pyr[_nr_scales]);
+    source.setTo(Scalar(0, 0, 0), _hole_pyr[_nr_scales]);
     //pmutil::imwrite_lab("hole_filling_source_with_black_hole.exr", source);
-    RandomizedPatchMatch rmp(source, _target_area_pyr[_nr_scales], _patch_size);
-    Mat offset_map = rmp.match();
-    VotedReconstruction vr(offset_map, source, _patch_size);
-    Mat reconstructed = vr.reconstruct();
-    Mat write_back_mask = _hole_pyr[_nr_scales](_target_rect_pyr[_nr_scales]);
-    reconstructed.copyTo(source(_target_rect_pyr[_nr_scales]), write_back_mask);
-    return source;
+    for (int i = 0; i < EM_STEPS; i++) {
+        RandomizedPatchMatch rmp(source, _target_area_pyr[_nr_scales], _patch_size);
+        Mat offset_map = rmp.match();
+        VotedReconstruction vr(offset_map, source, _patch_size);
+        Mat reconstructed = vr.reconstruct();
+        // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
+        Mat write_back_mask = _hole_pyr[_nr_scales](_target_rect_pyr[_nr_scales]);
+        reconstructed.copyTo(_target_area_pyr[_nr_scales], write_back_mask);
+        // Dumps current solution
+        Mat current = solutionFor(_nr_scales);
+        cvtColor(current, current, CV_Lab2BGR);
+        imwrite("gitter_hole_filled_scale_" + std::to_string(_nr_scales) + "_iter_" + std::to_string(i) + ".exr", current);
+    }
+    return solutionFor(_nr_scales);
 }
 
 Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
@@ -77,4 +87,11 @@ Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
     // Crop to image size.
     target_rect = target_rect & Rect(Point(0, 0), img.size());
     return target_rect;
+}
+
+Mat HoleFilling::solutionFor(int scale) {
+    Mat source = _img_pyr[scale].clone();
+    Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
+    _target_area_pyr[scale].copyTo(source(_target_rect_pyr[scale]), write_back_mask);
+    return source;
 }

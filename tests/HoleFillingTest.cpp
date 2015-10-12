@@ -66,9 +66,12 @@ TEST(hole_filling_test, square_hole_on_random_image)
     int patch_size = 7;
     HoleFilling hf(img, hole, patch_size);
 
-    Mat filled = hf.run();
-
     Mat bgr;
+    Mat filled_with_initial_guess = hf.solutionFor(hf._nr_scales);
+    cvtColor(filled_with_initial_guess, bgr, CV_Lab2BGR);
+    imwrite("gitter_hole_filled_initial_guess.exr", bgr);
+
+    Mat filled = hf.run();
     cvtColor(filled, bgr, CV_Lab2BGR);
     imwrite("gitter_hole_filled.exr", bgr);
 
