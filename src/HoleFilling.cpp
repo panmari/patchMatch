@@ -53,7 +53,7 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) :
 Mat HoleFilling::run() {
     // Set the source to full black in hole.
     for (int scale = _nr_scales; scale >= 0; scale--) {
-        Mat source = _img_pyr[scale];
+        Mat source = _img_pyr[scale].clone();
         if (scale == _nr_scales) {
             // Make some initial guess, here mean color of whole image.
             // TODO: Do some interpolation of borders for better initial guess.
@@ -64,8 +64,7 @@ Mat HoleFilling::run() {
             initial_guess.copyTo(_target_area_pyr[_nr_scales]);
 
         } else {
-            Mat previous_solution = solutionFor(scale + 1);
-            Mat upscaled_solution = upscaleSolution(previous_solution);
+            Mat upscaled_solution = upscaleSolution(scale);
             // Copy upscaled solution to current target area.
             upscaled_solution(_target_rect_pyr[scale]).copyTo(_target_area_pyr[scale]);
         }
@@ -90,7 +89,9 @@ Mat HoleFilling::run() {
     return solutionFor(0);
 }
 
-Mat HoleFilling::upscaleSolution(Mat &previous_solution) const {
+Mat HoleFilling::upscaleSolution(int current_scale) const {
+    Mat previous_solution = solutionFor(current_scale + 1);
+
     Mat upscaled_solution;
     if (WEXLER_UPSCALE) {
         // TODO: There is actually a better method for upscaling, see Wexler2007 Section 3.2
@@ -118,7 +119,7 @@ Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
     return target_rect;
 }
 
-Mat HoleFilling::solutionFor(int scale) {
+Mat HoleFilling::solutionFor(int scale) const {
     Mat source = _img_pyr[scale].clone();
     Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
     _target_area_pyr[scale].copyTo(source(_target_rect_pyr[scale]), write_back_mask);

@@ -31,54 +31,36 @@ TEST(hole_filling_test, square_hole_on_random_image_should_produce_correct_targe
     ASSERT_EQ(expected_target_rect, hf._target_rect_pyr[0]);
 }
 
-TEST(hole_filling_test, initial_guess_should_make_sense_for_grid_image)
-{
-    Mat img = imread("test_images/gitter.jpg");
-    convert_for_computation(img, 1.f);
-
-    // Add some hole
-    Mat hole = Mat::zeros(img.size(), CV_8U);
-
-    hole(Rect(65, 70, 10, 10)) = 1;
-    int patch_size = 7;
-    HoleFilling hf(img, hole, patch_size);
-
-    Mat initial_guess = hf._target_area_pyr[hf._nr_scales];
-    // TODO: Make some assertions.
-
-    Mat bgr;
-//    cvtColor(initial_guess, bgr, CV_Lab2BGR);
-//    imwrite("gitter_hole_initialized.exr", bgr);
-}
-
-TEST(hole_filling_test, square_hole_on_grid_image)
+TEST(hole_filling_test, square_hole_on_repeated_texture_should_give_good_result)
 {
     Mat img = imread("test_images/brick_pavement.jpg");
-    convert_for_computation(img, 1.f);
+    convert_for_computation(img, 0.5f);
 
     // Add some hole
     Mat hole_mask = Mat::zeros(img.size(), CV_8U);
 
-    hole_mask(Rect(70, 65, 20, 20)) = 1;
+    hole_mask(Rect(70, 65, 10, 10)) = 1;
     int patch_size = 7;
     HoleFilling hf(img, hole_mask, patch_size);
 
-    // Dump image with hole
+    // Dump image with hole as black region.
     Mat img_with_hole_bgr;
     cvtColor(img, img_with_hole_bgr, CV_Lab2BGR);
     img_with_hole_bgr.setTo(Scalar(0,0,0), hole_mask);
-    imwrite("gitter_hole.exr", img_with_hole_bgr);
+    imwrite("brick_pavement_hole.exr", img_with_hole_bgr);
 
-//    Mat filled_with_initial_guess = hf.solutionFor(hf._nr_scales);
-//    cvtColor(filled_with_initial_guess, bgr, CV_Lab2BGR);
-//    imwrite("gitter_hole_filled_initial_guess.exr", bgr);
-    Mat bgr;
+    // Dump reconstructed image
     Mat filled = hf.run();
-    cvtColor(filled, bgr, CV_Lab2BGR);
-    imwrite("gitter_hole_filled.exr", bgr);
+    cvtColor(filled, filled, CV_Lab2BGR);
+    imwrite("brick_pavement_hole_filled.exr", filled);
 
-    hf._target_area_pyr[hf._nr_scales];
-    // TODO: Test something sensible.
+
+    // The reconstructed image should be close to the original one, in this very simple case.
+    Mat img_bgr;
+    cvtColor(img, img_bgr, CV_Lab2BGR);
+    double ssd = pmutil::ssd(img_bgr, filled);
+    double mse = ssd / (img_bgr.cols * img_bgr.rows);
+    EXPECT_LT(mse, 1e-4);
 }
 
 // TODO: Test making hole by combining multiple rectangles to non-rectangular form.

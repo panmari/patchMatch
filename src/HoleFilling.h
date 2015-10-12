@@ -8,7 +8,7 @@ class HoleFilling {
 public:
     HoleFilling(cv::Mat &img, cv::Mat &hole, int patch_size);
     cv::Mat run();
-    cv::Mat solutionFor(int scale);
+    cv::Mat solutionFor(int scale) const;
 
     std::vector<cv::Mat> _img_pyr, _hole_pyr, _target_area_pyr;
     std::vector<cv::Rect> _target_rect_pyr;
@@ -16,7 +16,7 @@ public:
 private:
     cv::Mat _img, _hole;
     const int _patch_size;
-    cv::Mat upscaleSolution(cv::Mat &previous_solution) const;
+    cv::Mat upscaleSolution(int current_scale) const;
     cv::Rect computeTargetRect(cv::Mat &img, cv::Mat &hole, int patch_size) const;
 };
 
