@@ -1,10 +1,12 @@
 #ifndef PATCHMATCH_UTIL_H
 #define PATCHMATCH_UTIL_H
 
+#include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 namespace pmutil {
 
+    using cv::imwrite;
     using cv::Mat;
     using cv::Scalar;
     using cv::Size;

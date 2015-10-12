@@ -1,7 +1,6 @@
 #include "HoleFilling.h"
 #include "RandomizedPatchMatch.h"
 #include "VotedReconstruction.h"
-#include "opencv2/highgui/highgui.hpp"
 #include "util.h"
 #include "boost/format.hpp"
 
@@ -65,6 +64,7 @@ Mat HoleFilling::run() {
             Mat previous_solution = solutionFor(scale + 1);
             Mat upscaled_solution;
             pyrUp(previous_solution, upscaled_solution);
+            pmutil::imwrite_lab(str(format("gitter_hole_upscaled_scale_%d.exr") % scale), upscaled_solution);
             // Copy upscaled solution to current target area.
             upscaled_solution(_target_rect_pyr[scale]).copyTo(_target_area_pyr[scale]);
         }
@@ -72,6 +72,11 @@ Mat HoleFilling::run() {
         // TODO: Possibly set some other value here.
         source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
         for (int i = 0; i < EM_STEPS; i++) {
+            if (DUMP_INTERMEDIARY_RESULTS) {
+                Mat current_solution = solutionFor(scale);
+                pmutil::imwrite_lab(str(format("gitter_hole_filled_scale_%d_iter_%02d.exr") % scale % i),
+                                    current_solution);
+            }
             RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
             Mat offset_map = rmp.match();
             VotedReconstruction vr(offset_map, source, _patch_size);
@@ -79,11 +84,6 @@ Mat HoleFilling::run() {
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
             Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
             reconstructed.copyTo(_target_area_pyr[scale], write_back_mask);
-            if (DUMP_INTERMEDIARY_RESULTS) {
-                Mat current_solution = solutionFor(scale);
-                cvtColor(current_solution, current_solution, CV_Lab2BGR);
-                imwrite(str(format("gitter_hole_filled_scale_%d_iter_%02d.exr") % scale % i), current_solution);
-            }
         }
     }
     return solutionFor(0);
