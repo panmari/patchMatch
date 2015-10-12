@@ -1,6 +1,8 @@
 #include "HoleFilling.h"
 #include "RandomizedPatchMatch.h"
 #include "VotedReconstruction.h"
+#include "opencv2/highgui/highgui.hpp"
+#include "util.h"
 
 using cv::findNonZero;
 using cv::Mat;
@@ -30,14 +32,18 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole
         _nr_scales--;
     }
 
+    // Initialize target rects.
     _target_area_pyr = std::vector<Mat>(_nr_scales + 1);
+    for (int i = 0; i < _nr_scales + 1; i ++) {
+        _target_rect_pyr.push_back(computeTargetRect(_img_pyr[i], _hole_pyr[i], patch_size));
+    }
+
 
     // Set the mean color of the whole image as initial guess.
-    Mat mask = _hole_pyr[_nr_scales];
     Mat initial_guess = _img_pyr[_nr_scales].clone();
-    Rect low_res_target_rect = computeTargetRect(_img_pyr[_nr_scales], mask, patch_size);
+    Rect low_res_target_rect = _target_rect_pyr[_nr_scales];
     Scalar mean_color = sum(_img_pyr[_nr_scales]) / (_img_pyr[_nr_scales].cols * _img_pyr[_nr_scales].rows);
-    initial_guess.setTo(mean_color, mask);
+    initial_guess.setTo(mean_color, _hole_pyr[_nr_scales]);
     initial_guess(low_res_target_rect).copyTo(_target_area_pyr[_nr_scales]);
 
 }
@@ -46,11 +52,14 @@ Mat HoleFilling::run() {
     // Set the source to full black in hole.
     Mat source = _img_pyr[_nr_scales];
     source.setTo(Scalar(0, 0 ,0), _hole_pyr[_nr_scales]);
+    //pmutil::imwrite_lab("hole_filling_source_with_black_hole.exr", source);
     RandomizedPatchMatch rmp(source, _target_area_pyr[_nr_scales], _patch_size);
     Mat offset_map = rmp.match();
     VotedReconstruction vr(offset_map, source, _patch_size);
     Mat reconstructed = vr.reconstruct();
-    return reconstructed;
+    Mat write_back_mask = _hole_pyr[_nr_scales](_target_rect_pyr[_nr_scales]);
+    reconstructed.copyTo(source(_target_rect_pyr[_nr_scales]), write_back_mask);
+    return source;
 }
 
 Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {

@@ -8,6 +8,7 @@ namespace pmutil {
     using cv::Mat;
     using cv::Scalar;
     using cv::Size;
+    using cv::String;
 
     /**
      * Computes the sum of squared differences of the two given matrices/images. Assumes that they have the same size
@@ -34,6 +35,15 @@ namespace pmutil {
         }
         img.convertTo(img, CV_32FC3, 1 / 255.f);
         cvtColor(img, img, CV_BGR2Lab);
+    }
+
+    /**
+     * Writes the given img to a file with the given filename, converting it first from lab to bgr
+     */
+    static void imwrite_lab( String filename, Mat &img) {
+        Mat bgr;
+        cvtColor(img, bgr, CV_Lab2BGR);
+        imwrite(filename, bgr);
     }
 }
 

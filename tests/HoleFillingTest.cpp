@@ -28,7 +28,7 @@ TEST(hole_filling_test, square_hole_on_random_image_should_produce_correct_targe
 
     Rect expected_target_rect(Point(50 - 6, 50 - 6), Point(60 + 6, 60 + 6));
 
-    ASSERT_EQ(expected_target_rect, hf.computeTargetRect(img, hole, patch_size));
+    ASSERT_EQ(expected_target_rect, hf._target_rect_pyr[0]);
 }
 
 TEST(hole_filling_test, initial_guess_should_make_sense)
@@ -70,7 +70,7 @@ TEST(hole_filling_test, square_hole_on_random_image)
 
     Mat bgr;
     cvtColor(filled, bgr, CV_Lab2BGR);
-    imwrite("gitter_hole_filled.exr", filled);
+    imwrite("gitter_hole_filled.exr", bgr);
 
     hf._target_area_pyr[hf._nr_scales];
     // TODO: Test something sensible.

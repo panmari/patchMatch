@@ -54,7 +54,5 @@ Mat VotedReconstruction::reconstruct() const {
         divide(chan, count, chan);
     }
     merge(channels, reconstructed);
-
-    cvtColor(reconstructed, reconstructed, CV_Lab2BGR);
     return reconstructed;
 }

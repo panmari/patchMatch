@@ -57,10 +57,12 @@ int main( int argc, char** argv )
 
     TrivialReconstruction tr(minDistImg, img2, PATCH_SIZE);
     Mat reconstructed = tr.reconstruct();
+    cvtColor(reconstructed, reconstructed, CV_Lab2BGR);
     imwrite("reconstructed.exr", reconstructed);
 
     VotedReconstruction vr(minDistImg, img2, PATCH_SIZE);
     Mat reconstructed2 = vr.reconstruct();
+    cvtColor(reconstructed2, reconstructed2, CV_Lab2BGR);
     imwrite("reconstructed_voted.exr", reconstructed2);
 
     cout << "SSD trivial reconstruction: " << ssd(reconstructed, original) << endl;

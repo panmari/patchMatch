@@ -29,7 +29,5 @@ Mat TrivialReconstruction::reconstruct() const {
             matching_patch.copyTo(reconstructed(current_patch_rect));
         }
     }
-
-    cvtColor(reconstructed, reconstructed, CV_Lab2BGR);
     return reconstructed;
 }

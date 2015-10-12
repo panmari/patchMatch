@@ -7,14 +7,16 @@ class HoleFilling {
 
 public:
     HoleFilling(cv::Mat &img, cv::Mat &hole, int patch_size);
-    cv::Rect computeTargetRect(cv::Mat &img, cv::Mat &hole, int patch_size) const;
     cv::Mat run();
 
     std::vector<cv::Mat> _img_pyr, _hole_pyr, _target_area_pyr;
+    std::vector<cv::Rect> _target_rect_pyr;
     int _nr_scales;
 private:
     cv::Mat _img, _hole;
     const int _patch_size;
+
+    cv::Rect computeTargetRect(cv::Mat &img, cv::Mat &hole, int patch_size) const;
 };
 
 #endif //PATCHMATCH_HOLEFILLING_H
