@@ -31,7 +31,7 @@ TEST(hole_filling_test, square_hole_on_random_image_should_produce_correct_targe
     ASSERT_EQ(expected_target_rect, hf._target_rect_pyr[0]);
 }
 
-TEST(hole_filling_test, initial_guess_should_make_sense)
+TEST(hole_filling_test, initial_guess_should_make_sense_for_grid_image)
 {
     Mat img = imread("test_images/gitter.jpg");
     convert_for_computation(img, 1.f);
@@ -43,18 +43,15 @@ TEST(hole_filling_test, initial_guess_should_make_sense)
     int patch_size = 7;
     HoleFilling hf(img, hole, patch_size);
 
+    Mat initial_guess = hf._target_area_pyr[hf._nr_scales];
+    // TODO: Make some assertions.
+
     Mat bgr;
-    cvtColor(hf._target_area_pyr[hf._nr_scales], bgr, CV_Lab2BGR);
-    imwrite("gitter_hole_initialized.exr", bgr);
-    int i = 0;
-    for (Mat m: hf._hole_pyr) {
-        imwrite("hole" + std::to_string(i) + ".exr", m);
-        i++;
-    }
-    // TODO: Test something sensible.
+//    cvtColor(initial_guess, bgr, CV_Lab2BGR);
+//    imwrite("gitter_hole_initialized.exr", bgr);
 }
 
-TEST(hole_filling_test, square_hole_on_random_image)
+TEST(hole_filling_test, square_hole_on_grid_image)
 {
     Mat img = imread("test_images/gitter.jpg");
     convert_for_computation(img, 1.f);
@@ -67,9 +64,9 @@ TEST(hole_filling_test, square_hole_on_random_image)
     HoleFilling hf(img, hole, patch_size);
 
     Mat bgr;
-    Mat filled_with_initial_guess = hf.solutionFor(hf._nr_scales);
-    cvtColor(filled_with_initial_guess, bgr, CV_Lab2BGR);
-    imwrite("gitter_hole_filled_initial_guess.exr", bgr);
+//    Mat filled_with_initial_guess = hf.solutionFor(hf._nr_scales);
+//    cvtColor(filled_with_initial_guess, bgr, CV_Lab2BGR);
+//    imwrite("gitter_hole_filled_initial_guess.exr", bgr);
 
     Mat filled = hf.run();
     cvtColor(filled, bgr, CV_Lab2BGR);

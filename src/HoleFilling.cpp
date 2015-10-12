@@ -3,10 +3,13 @@
 #include "VotedReconstruction.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "util.h"
+#include "boost/format.hpp"
 
+using boost::format;
 using cv::findNonZero;
 using cv::Mat;
 using cv::Point;
+using cv::pyrUp;
 using cv::Rect;
 using cv::Scalar;
 using std::vector;
@@ -14,9 +17,11 @@ using std::max_element;
 using std::min_element;
 
 /**
- * Number of iterations for expectation maximizationm, in our case reconstruction and building of NNF.
+ * Number of iterations for expectation maximization, in our case reconstruction and building of NNF.
  */
 const int EM_STEPS = 20;
+const bool DUMP_INTERMEDIARY_RESULTS = true;
+
 namespace {
     static bool compare_by_x(Point a, Point b) {
         return a.x < b.x;
@@ -41,35 +46,47 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _img(img), _hole
     for (int i = 0; i < _nr_scales + 1; i ++) {
         _target_rect_pyr.push_back(computeTargetRect(_img_pyr[i], _hole_pyr[i], patch_size));
     }
-
-
-    // Set the mean color of the whole image as initial guess.
-    Mat initial_guess = _img_pyr[_nr_scales].clone();
-    Rect low_res_target_rect = _target_rect_pyr[_nr_scales];
-    Scalar mean_color = sum(_img_pyr[_nr_scales]) / (_img_pyr[_nr_scales].cols * _img_pyr[_nr_scales].rows);
-    initial_guess.setTo(mean_color, _hole_pyr[_nr_scales]);
-    initial_guess(low_res_target_rect).copyTo(_target_area_pyr[_nr_scales]);
 }
 
 Mat HoleFilling::run() {
     // Set the source to full black in hole.
-    Mat source = _img_pyr[_nr_scales];
-    source.setTo(Scalar(0, 0, 0), _hole_pyr[_nr_scales]);
-    //pmutil::imwrite_lab("hole_filling_source_with_black_hole.exr", source);
-    for (int i = 0; i < EM_STEPS; i++) {
-        RandomizedPatchMatch rmp(source, _target_area_pyr[_nr_scales], _patch_size);
-        Mat offset_map = rmp.match();
-        VotedReconstruction vr(offset_map, source, _patch_size);
-        Mat reconstructed = vr.reconstruct();
-        // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
-        Mat write_back_mask = _hole_pyr[_nr_scales](_target_rect_pyr[_nr_scales]);
-        reconstructed.copyTo(_target_area_pyr[_nr_scales], write_back_mask);
-        // Dumps current solution
-        Mat current = solutionFor(_nr_scales);
-        cvtColor(current, current, CV_Lab2BGR);
-        imwrite("gitter_hole_filled_scale_" + std::to_string(_nr_scales) + "_iter_" + std::to_string(i) + ".exr", current);
+    for (int scale = _nr_scales; scale >= 0; scale--) {
+        Mat source = _img_pyr[scale];
+        if (scale == _nr_scales) {
+            // Make some initial guess, here mean color of whole image.
+            // TODO: Do some interpolation of borders for better initial guess.
+            Rect low_res_target_rect = _target_rect_pyr[_nr_scales];
+            Mat initial_guess = source(low_res_target_rect).clone();
+            Scalar mean_color = sum(source) / (source.cols * source.rows);
+            initial_guess.setTo(mean_color, _hole_pyr[_nr_scales](low_res_target_rect));
+            initial_guess.copyTo(_target_area_pyr[_nr_scales]);
+
+        } else {
+            Mat previous_solution = solutionFor(scale + 1);
+            Mat upscaled_solution;
+            pyrUp(previous_solution, upscaled_solution);
+            // Copy upscaled solution to current target area.
+            upscaled_solution(_target_rect_pyr[scale]).copyTo(_target_area_pyr[scale]);
+        }
+        // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
+        // TODO: Possibly set some other value here.
+        source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
+        for (int i = 0; i < EM_STEPS; i++) {
+            RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
+            Mat offset_map = rmp.match();
+            VotedReconstruction vr(offset_map, source, _patch_size);
+            Mat reconstructed = vr.reconstruct();
+            // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
+            Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
+            reconstructed.copyTo(_target_area_pyr[scale], write_back_mask);
+            if (DUMP_INTERMEDIARY_RESULTS) {
+                Mat current_solution = solutionFor(scale);
+                cvtColor(current_solution, current_solution, CV_Lab2BGR);
+                imwrite(str(format("gitter_hole_filled_scale_%d_iter_%02d.exr") % scale % i), current_solution);
+            }
+        }
     }
-    return solutionFor(_nr_scales);
+    return solutionFor(0);
 }
 
 Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
