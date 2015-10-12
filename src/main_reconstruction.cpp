@@ -25,6 +25,9 @@ using std::endl;
 const float RESIZE_FACTOR = 0.5;
 const int PATCH_SIZE = 7;
 
+/**
+ * Tries to reconstruct the second image with patches from the first images.
+ */
 int main( int argc, char** argv )
 {
     /// Load image and template
@@ -43,9 +46,6 @@ int main( int argc, char** argv )
     // For fast testing, make it tiny
     convert_for_computation(source, RESIZE_FACTOR);
     convert_for_computation(target, RESIZE_FACTOR);
-
-    cout << "Size of source: " << source.size() << endl;
-    cout << "Size of target: " << target.size() << endl;
 
     RandomizedPatchMatch rpm(source, target, PATCH_SIZE);
 

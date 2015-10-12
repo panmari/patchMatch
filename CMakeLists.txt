@@ -15,9 +15,11 @@ file(GLOB_RECURSE patch_match_source src/*)
 add_library(patch_match_lib ${patch_match_source})
 target_link_libraries(patch_match_lib ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
-set(SOURCE_FILES src/main.cpp)
-add_executable(pach_match src/main.cpp)
-target_link_libraries(pach_match patch_match_lib )
+add_executable(reconstruction src/main_reconstruction.cpp)
+target_link_libraries(reconstruction patch_match_lib)
+
+add_executable(hole_filling src/main_hole_filling.cpp)
+target_link_libraries(hole_filling patch_match_lib)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
