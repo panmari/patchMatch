@@ -29,38 +29,38 @@ void convert_for_computation(Mat &img);
 int main( int argc, char** argv )
 {
     /// Load image and template
-    Mat img = imread( argv[1], 1 );
-    Mat img2 = imread( argv[2], 1);
+    Mat source = imread( argv[1], 1 );
+    Mat target = imread( argv[2], 1);
 
-    if (!img.data || !img2.data) {
+    if (!source.data || !target.data) {
         printf("Need two pictures as arguments.\n");
         return -1;
     }
     // For later comparison.
     Mat original;
-    resize(img, original, Size(), RESIZE_FACTOR, RESIZE_FACTOR);
+    resize(target, original, Size(), RESIZE_FACTOR, RESIZE_FACTOR);
     original.convertTo(original, CV_32FC3, 1 / 255.f);
 
     // For fast testing, make it tiny
-    convert_for_computation(img, RESIZE_FACTOR);
-    convert_for_computation(img2, RESIZE_FACTOR);
+    convert_for_computation(source, RESIZE_FACTOR);
+    convert_for_computation(target, RESIZE_FACTOR);
 
-    cout << "Size of img1: " << img.size() << endl;
-    cout << "Size of img2: " << img2.size() << endl;
+    cout << "Size of source: " << source.size() << endl;
+    cout << "Size of target: " << target.size() << endl;
 
-    RandomizedPatchMatch rpm(img, img2, PATCH_SIZE);
+    RandomizedPatchMatch rpm(source, target, PATCH_SIZE);
 
-    ExhaustivePatchMatch epm(img, img2);
+    ExhaustivePatchMatch epm(source, target);
 
     Mat minDistImg = rpm.match();
     //Mat minDistImg = epm.match(PATCH_SIZE);
 
-    TrivialReconstruction tr(minDistImg, img2, PATCH_SIZE);
+    TrivialReconstruction tr(minDistImg, source, PATCH_SIZE);
     Mat reconstructed = tr.reconstruct();
     cvtColor(reconstructed, reconstructed, CV_Lab2BGR);
     imwrite("reconstructed.exr", reconstructed);
 
-    VotedReconstruction vr(minDistImg, img2, PATCH_SIZE);
+    VotedReconstruction vr(minDistImg, source, PATCH_SIZE);
     Mat reconstructed2 = vr.reconstruct();
     cvtColor(reconstructed2, reconstructed2, CV_Lab2BGR);
     imwrite("reconstructed_voted.exr", reconstructed2);

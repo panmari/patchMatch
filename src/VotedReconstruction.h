@@ -15,12 +15,12 @@ public:
      * the y-channel being the y-offset.
      * The patch image is assumed to be the one referenced in offset_map.
      */
-    VotedReconstruction(cv::Mat &offset_map, cv::Mat &patch_img, int patch_size);
+    VotedReconstruction(cv::Mat &offset_map, cv::Mat &source, int patch_size);
 
     cv::Mat reconstruct() const;
 
 private:
-    cv::Mat _offset_map, _patch_img;
+    cv::Mat _offset_map, _source;
     int _patch_size;
 
 };

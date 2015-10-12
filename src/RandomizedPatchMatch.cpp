@@ -55,10 +55,10 @@ cv::Mat RandomizedPatchMatch::match() {
                         Rect candidate_rect((lower_offset[0] + x) * 2, (lower_offset[1] + y) * 2,
                                             _patch_size, _patch_size);
                         Rect current_patch_rect(x * 2, y * 2, _patch_size, _patch_size);
-                        Mat current_patch = source(current_patch_rect);
+                        Mat current_patch = target(current_patch_rect);
                         Vec3f* current_offset = offset_map.ptr<Vec3f>(y * 2, x * 2);
                         updateOffsetMapEntryIfBetter(current_patch, candidate_offset,
-                                                     candidate_rect, target, current_offset);
+                                                     candidate_rect, source, current_offset);
                     }
                 }
             }
@@ -76,21 +76,21 @@ cv::Mat RandomizedPatchMatch::match() {
                         y_unflipped = y;
                     }
                     Rect currentPatchRect(x_unflipped, y_unflipped, _patch_size, _patch_size);
-                    Mat currentPatch = source(currentPatchRect);
+                    Mat currentPatch = target(currentPatchRect);
 
                     if (x > 0) {
                         Vec3f offsetLeft = offset_map.at<Vec3f>(y, x - 1);
                         Rect rectLeft((int) offsetLeft[0] + x_unflipped, (int) offsetLeft[1] + y_unflipped,
                                       _patch_size, _patch_size);
                         Point offsetLeftPoint(offsetLeft[0], offsetLeft[1]);
-                        updateOffsetMapEntryIfBetter(currentPatch, offsetLeftPoint, rectLeft, target, offset_map_entry);
+                        updateOffsetMapEntryIfBetter(currentPatch, offsetLeftPoint, rectLeft, source, offset_map_entry);
                     }
                     if (y > 0) {
                         Vec3f offsetUp = offset_map.at<Vec3f>(y - 1, x);
                         Rect rectUp((int) offsetUp[0] + x_unflipped, (int) offsetUp[1] + y_unflipped,
                                     _patch_size, _patch_size);
                         Point offsetUpPoint(offsetUp[0], offsetUp[1]);
-                        updateOffsetMapEntryIfBetter(currentPatch, offsetUpPoint, rectUp, target, offset_map_entry);
+                        updateOffsetMapEntryIfBetter(currentPatch, offsetUpPoint, rectUp, source, offset_map_entry);
                     }
 
                     Point current_offset((*offset_map_entry)[0], (*offset_map_entry)[1]);
@@ -104,7 +104,7 @@ cv::Mat RandomizedPatchMatch::match() {
                             Rect random_rect(x_unflipped + random_offset.x,
                                              y_unflipped + random_offset.y, _patch_size, _patch_size);
 
-                            updateOffsetMapEntryIfBetter(currentPatch, random_offset, random_rect, target,
+                            updateOffsetMapEntryIfBetter(currentPatch, random_offset, random_rect, source,
                                                          offset_map_entry);
 
                             current_search_radius *= ALPHA;
@@ -128,11 +128,11 @@ cv::Mat RandomizedPatchMatch::match() {
 }
 
 void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candidate_offset,
-                                                        Rect &candidate_rect, Mat &other_img, Vec3f *offset_map_entry) {
+                                                        Rect &candidate_rect, Mat &source_img, Vec3f *offset_map_entry) {
     // Check if it's fully inside, only try to update then
-    Rect other_img_rect(Point(0,0), other_img.size());
-    if ((candidate_rect & other_img_rect) == candidate_rect) {
-        Mat candidate_patch = other_img(candidate_rect);
+    Rect source_img_rect(Point(0,0), source_img.size());
+    if ((candidate_rect & source_img_rect) == candidate_rect) {
+        Mat candidate_patch = source_img(candidate_rect);
         float ssd_value = (float) ssd(patch, candidate_patch);
         if (ssd_value < offset_map_entry->val[2]) {
             offset_map_entry->val[0] = candidate_offset.x;

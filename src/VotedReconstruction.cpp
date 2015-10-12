@@ -12,8 +12,8 @@ using std::vector;
 const bool WEIGHTED_BY_SIMILARITY = false;
 const float SIGMA_SQR = 1;
 
-VotedReconstruction::VotedReconstruction(Mat &offset_map, Mat &patch_img, int patch_size) :
-        _offset_map(offset_map), _patch_img(patch_img), _patch_size(patch_size) { }
+VotedReconstruction::VotedReconstruction(Mat &offset_map, Mat &source, int patch_size) :
+        _offset_map(offset_map), _source(source), _patch_size(patch_size) { }
 
 Mat VotedReconstruction::reconstruct() const {
     Mat reconstructed = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
@@ -26,7 +26,7 @@ Mat VotedReconstruction::reconstruct() const {
             int match_y = y + offset_map_entry[1];
             // Get image data of matching patch
             Rect matching_patch_rect(match_x, match_y, _patch_size, _patch_size);
-            Mat matching_patch = _patch_img(matching_patch_rect);
+            Mat matching_patch = _source(matching_patch_rect);
 
             float weight;
             if (WEIGHTED_BY_SIMILARITY) {
