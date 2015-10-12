@@ -19,7 +19,13 @@ using cv::Vec3f;
 using std::max;
 using pmutil::ssd;
 
+/**
+ * Number times propagation/random_search is executed for every patch per iteration.
+ */
 const int ITERATIONS_PER_SCALE = 5;
+/**
+ * If true, does try to improve patches by doing random search. Else, only propagation is used. Default: true.
+ */
 const bool RANDOM_SEARCH = true;
 const bool MERGE_UPSAMPLED_OFFSETS = true;
 const float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
@@ -93,9 +99,9 @@ cv::Mat RandomizedPatchMatch::match() {
                         updateOffsetMapEntryIfBetter(currentPatch, offsetUpPoint, rectUp, source, offset_map_entry);
                     }
 
-                    Point current_offset((*offset_map_entry)[0], (*offset_map_entry)[1]);
 
                     if (RANDOM_SEARCH) {
+                        Point current_offset(offset_map_entry->val[0], offset_map_entry->val[1]);
                         float current_search_radius = _max_search_radius;
                         while (current_search_radius > 1) {
                             Point random_point = Point(rng.uniform(-1.f, 1.f) * current_search_radius,
@@ -112,7 +118,7 @@ cv::Mat RandomizedPatchMatch::match() {
                     }
                 }
             }
-            dumpOffsetMapToFile(offset_map, "_scale_" + std::to_string(s) + "_i_" + std::to_string(i));
+            // dumpOffsetMapToFile(offset_map, "_scale_" + std::to_string(s) + "_i_" + std::to_string(i));
             // Every second iteration, we go the other way round (start at bottom, propagate from right and down).
             // This effect can be achieved by flipping the matrix after every iteration.
             flip(offset_map, offset_map, -1);
@@ -128,7 +134,8 @@ cv::Mat RandomizedPatchMatch::match() {
 }
 
 void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candidate_offset,
-                                                        Rect &candidate_rect, Mat &source_img, Vec3f *offset_map_entry) {
+                                                        Rect &candidate_rect, Mat &source_img,
+                                                        Vec3f *offset_map_entry) const {
     // Check if it's fully inside, only try to update then
     Rect source_img_rect(Point(0,0), source_img.size());
     if ((candidate_rect & source_img_rect) == candidate_rect) {
@@ -143,8 +150,8 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candi
 
 }
 
-void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &source_img, Mat &target_img, Mat &offset_map) {
-    // Seed random;
+void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &source_img, Mat &target_img, Mat &offset_map) const {
+    // Seed random generator to have reproducable results.
     srand(target_img.rows * target_img.cols);
     offset_map.create(target_img.rows - _patch_size, target_img.cols - _patch_size, CV_32FC3);
     for (int x = 0; x < offset_map.cols; x++) {
@@ -192,9 +199,9 @@ void RandomizedPatchMatch::dumpOffsetMapToFile(Mat &offset_map, String filename_
     imwrite("hsv_offsets" + filename_modifier + ".exr", hsv);
 
     // Dump unnormalized values for inspection.
-    imwrite("xoffsets" + filename_modifier + ".exr", out[0]);
-    imwrite("yoffsets" + filename_modifier + ".exr", out[1]);
-    imwrite("min_dist_img" + filename_modifier + ".exr", out[2]);
+    Mat offset_map_bgr;
+    cvtColor(offset_map, offset_map_bgr, CV_RGB2BGR);
+    imwrite("full_nnf" + filename_modifier + ".exr", offset_map_bgr);
     normalize(out[2], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
     imwrite("min_dist_img_normalized" + filename_modifier + ".exr", normed);
 }

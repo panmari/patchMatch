@@ -19,7 +19,7 @@ using std::min_element;
  * Number of iterations for expectation maximization, in our case reconstruction and building of NNF.
  */
 const int EM_STEPS = 20;
-const bool DUMP_INTERMEDIARY_RESULTS = true;
+const bool DUMP_INTERMEDIARY_RESULTS = false;
 
 namespace {
     static bool compare_by_x(Point a, Point b) {
@@ -63,6 +63,7 @@ Mat HoleFilling::run() {
         } else {
             Mat previous_solution = solutionFor(scale + 1);
             Mat upscaled_solution;
+            // TODO: There is actually a better method for upscaling, see Wexler2007 Section 3.2
             pyrUp(previous_solution, upscaled_solution);
             pmutil::imwrite_lab(str(format("gitter_hole_upscaled_scale_%d.exr") % scale), upscaled_solution);
             // Copy upscaled solution to current target area.

@@ -24,7 +24,6 @@ using std::endl;
 
 const float RESIZE_FACTOR = 0.5;
 const int PATCH_SIZE = 7;
-void convert_for_computation(Mat &img);
 
 int main( int argc, char** argv )
 {

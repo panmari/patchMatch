@@ -53,21 +53,26 @@ TEST(hole_filling_test, initial_guess_should_make_sense_for_grid_image)
 
 TEST(hole_filling_test, square_hole_on_grid_image)
 {
-    Mat img = imread("test_images/gitter.jpg");
+    Mat img = imread("test_images/brick_pavement.jpg");
     convert_for_computation(img, 1.f);
 
     // Add some hole
-    Mat hole = Mat::zeros(img.size(), CV_8U);
+    Mat hole_mask = Mat::zeros(img.size(), CV_8U);
 
-    hole(Rect(65, 70, 10, 10)) = 1;
+    hole_mask(Rect(70, 65, 20, 20)) = 1;
     int patch_size = 7;
-    HoleFilling hf(img, hole, patch_size);
+    HoleFilling hf(img, hole_mask, patch_size);
 
-    Mat bgr;
+    // Dump image with hole
+    Mat img_with_hole_bgr;
+    cvtColor(img, img_with_hole_bgr, CV_Lab2BGR);
+    img_with_hole_bgr.setTo(Scalar(0,0,0), hole_mask);
+    imwrite("gitter_hole.exr", img_with_hole_bgr);
+
 //    Mat filled_with_initial_guess = hf.solutionFor(hf._nr_scales);
 //    cvtColor(filled_with_initial_guess, bgr, CV_Lab2BGR);
 //    imwrite("gitter_hole_filled_initial_guess.exr", bgr);
-
+    Mat bgr;
     Mat filled = hf.run();
     cvtColor(filled, bgr, CV_Lab2BGR);
     imwrite("gitter_hole_filled.exr", bgr);
@@ -75,3 +80,5 @@ TEST(hole_filling_test, square_hole_on_grid_image)
     hf._target_area_pyr[hf._nr_scales];
     // TODO: Test something sensible.
 }
+
+// TODO: Test making hole by combining multiple rectangles to non-rectangular form.

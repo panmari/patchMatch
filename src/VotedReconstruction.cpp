@@ -40,7 +40,7 @@ Mat VotedReconstruction::reconstruct() const {
             // Add to all pixels at once.
             Rect current_patch_rect(x, y, _patch_size, _patch_size);
 
-            reconstructed(current_patch_rect) += weight * matching_patch;
+            reconstructed(current_patch_rect) += matching_patch * weight;
 
             // Remember for every pixel, how many patches were added up for later division.
             count(current_patch_rect) += weight;
