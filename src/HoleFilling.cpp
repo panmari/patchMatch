@@ -19,7 +19,7 @@ using std::min_element;
  * Number of iterations for expectation maximization, in our case reconstruction and building of NNF.
  */
 const int EM_STEPS = 10;
-const bool WEXLER_UPSCALE = false;
+const bool WEXLER_UPSCALE = true;
 const bool DUMP_INTERMEDIARY_RESULTS = true;
 
 namespace {
@@ -46,7 +46,7 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) :
     // Initialize target rects.
     _target_area_pyr.resize(_nr_scales + 1);
     _target_rect_pyr.resize(_nr_scales + 1);
-    _offset_map_pyr.resize(_nr_scales); // needs one less, since for initial guess there is none.
+    _offset_map_pyr.resize(_nr_scales + 1);
     for (int i = 0; i < _nr_scales + 1; i ++) {
         _target_rect_pyr[i] = computeTargetRect(_img_pyr[i], _hole_pyr[i], patch_size);
     }
@@ -68,24 +68,24 @@ Mat HoleFilling::run() {
         } else {
             Mat upscaled_solution = upscaleSolution(scale);
             // Copy upscaled solution to current target area.
-            upscaled_solution(_target_rect_pyr[scale]).copyTo(_target_area_pyr[scale]);
+            upscaled_solution.copyTo(_target_area_pyr[scale]);
         }
         // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
         // TODO: Possibly set some other value here.
         source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
         for (int i = 0; i < EM_STEPS; i++) {
             RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
-            Mat offset_map = rmp.match();
+            _offset_map_pyr[scale] = rmp.match();
             if (DUMP_INTERMEDIARY_RESULTS) {
                 cv::String modifier = str(format("scale_%d_iter_%02d") % scale % i);
                 Mat current_solution = solutionFor(scale);
-                pmutil::imwrite_lab("gitter_hole_filled_" + modifier + ".exr", current_solution);
+                pmutil::imwrite_lab("hole_filled_" + modifier + ".exr", current_solution);
                 // Dump nearest patches for every pixel in offset map
-                Mat img_bgr;
-                cvtColor(source, img_bgr, CV_Lab2BGR);
-                pmutil::dumpNearestPatches(offset_map, img_bgr, _patch_size, modifier);
+                // Mat img_bgr;
+                // cvtColor(source, img_bgr, CV_Lab2BGR);
+                //pmutil::dumpNearestPatches(_offset_map_pyr[scale], img_bgr, _patch_size, modifier);
             }
-            VotedReconstruction vr(offset_map, source, _patch_size);
+            VotedReconstruction vr(_offset_map_pyr[scale], source, _patch_size);
             Mat reconstructed = vr.reconstruct();
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
             Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
@@ -96,16 +96,56 @@ Mat HoleFilling::run() {
 }
 
 Mat HoleFilling::upscaleSolution(int current_scale) const {
-    Mat previous_solution = solutionFor(current_scale + 1);
-
-    Mat upscaled_solution;
+    Mat upscaled_solution_target_area;
     if (WEXLER_UPSCALE) {
         // TODO: There is actually a better method for upscaling, see Wexler2007 Section 3.2
+        Mat previous_offset_map = _offset_map_pyr[current_scale + 1];
+        Mat source = _img_pyr[current_scale];
+        cv::Size upscaled_solution_size((previous_offset_map.cols - 1) * 2 + _patch_size,
+                                        (previous_offset_map.rows - 1) * 2 + _patch_size);
+        upscaled_solution_target_area = Mat::zeros(upscaled_solution_size, CV_32FC3);
+        Mat count = Mat::zeros(upscaled_solution_size, CV_32FC1);
+        for (int x = 0; x < previous_offset_map.cols; x++) {
+            for (int y = 0; y < previous_offset_map.rows; y++) {
+                // Go over all patches that contain this image.
+                cv::Vec3f offset_map_entry = previous_offset_map.at<cv::Vec3f>(y, x);
+                int match_x = (x + offset_map_entry[0]) * 2;
+                int match_y = (y + offset_map_entry[1]) * 2;
+                // Get image data of matching patch
+                Rect matching_patch_rect(match_x, match_y, _patch_size, _patch_size);
+                Mat matching_patch = source(matching_patch_rect);
 
+                float weight = 1;
+                // Add to all pixels at once.
+                Rect current_patch_rect(x * 2, y * 2, _patch_size, _patch_size);
+
+                upscaled_solution_target_area(current_patch_rect) += matching_patch * weight;
+
+                // Remember for every pixel, how many patches were added up for later division.
+                count(current_patch_rect) += weight;
+            }
+        }
+        vector<Mat> channels(3);
+        split(upscaled_solution_target_area, channels);
+        for (Mat chan: channels) {
+            divide(chan, count, chan);
+        }
+        merge(channels, upscaled_solution_target_area);
+        Rect target_area_rect = _target_rect_pyr[current_scale];
+        pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_solution_target_area);
+        if (upscaled_solution_size != target_area_rect.size()) {
+            // Crop to real target area size by taking the rectangular in the middle of reconstructed region.
+            cv::Point2f center(upscaled_solution_size.width / 2.f, upscaled_solution_size.height / 2.f);
+            getRectSubPix(upscaled_solution_target_area, target_area_rect.size(), center, upscaled_solution_target_area);
+        }
+        pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_solution_target_area);
     } else {
+        Mat previous_solution = solutionFor(current_scale + 1);
+        Mat upscaled_solution;
         pyrUp(previous_solution, upscaled_solution);
+        upscaled_solution_target_area = upscaled_solution(_target_rect_pyr[current_scale]);
     }
-    return upscaled_solution;
+    return upscaled_solution_target_area;
 }
 
 Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
