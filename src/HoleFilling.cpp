@@ -44,9 +44,11 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) :
     }
 
     // Initialize target rects.
-    _target_area_pyr = std::vector<Mat>(_nr_scales + 1);
+    _target_area_pyr.resize(_nr_scales + 1);
+    _target_rect_pyr.resize(_nr_scales + 1);
+    _offset_map_pyr.resize(_nr_scales); // needs one less, since for initial guess there is none.
     for (int i = 0; i < _nr_scales + 1; i ++) {
-        _target_rect_pyr.push_back(computeTargetRect(_img_pyr[i], _hole_pyr[i], patch_size));
+        _target_rect_pyr[i] = computeTargetRect(_img_pyr[i], _hole_pyr[i], patch_size);
     }
 }
 
@@ -99,10 +101,10 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
     Mat upscaled_solution;
     if (WEXLER_UPSCALE) {
         // TODO: There is actually a better method for upscaling, see Wexler2007 Section 3.2
+
     } else {
         pyrUp(previous_solution, upscaled_solution);
     }
-    // pmutil::imwrite_lab(str(format("gitter_hole_upscaled_scale_%d.exr") % scale), upscaled_solution);
     return upscaled_solution;
 }
 
