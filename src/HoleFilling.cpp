@@ -20,7 +20,7 @@ using std::min_element;
  */
 const int EM_STEPS = 10;
 const bool WEXLER_UPSCALE = false;
-const bool DUMP_INTERMEDIARY_RESULTS = false;
+const bool DUMP_INTERMEDIARY_RESULTS = true;
 
 namespace {
     static bool compare_by_x(Point a, Point b) {
@@ -72,13 +72,17 @@ Mat HoleFilling::run() {
         // TODO: Possibly set some other value here.
         source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
         for (int i = 0; i < EM_STEPS; i++) {
-            if (DUMP_INTERMEDIARY_RESULTS) {
-                Mat current_solution = solutionFor(scale);
-                pmutil::imwrite_lab(str(format("gitter_hole_filled_scale_%d_iter_%02d.exr") % scale % i),
-                                    current_solution);
-            }
             RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
             Mat offset_map = rmp.match();
+            if (DUMP_INTERMEDIARY_RESULTS) {
+                cv::String modifier = str(format("scale_%d_iter_%02d") % scale % i);
+                Mat current_solution = solutionFor(scale);
+                pmutil::imwrite_lab("gitter_hole_filled_" + modifier + ".exr", current_solution);
+                // Dump nearest patches for every pixel in offset map
+                Mat img_bgr;
+                cvtColor(source, img_bgr, CV_Lab2BGR);
+                pmutil::dumpNearestPatches(offset_map, img_bgr, _patch_size, modifier);
+            }
             VotedReconstruction vr(offset_map, source, _patch_size);
             Mat reconstructed = vr.reconstruct();
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.

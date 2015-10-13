@@ -55,13 +55,13 @@ namespace pmutil {
     /**
      * Dumps all nearest patches for visual inspection
      */
-    static void dumpNearestPatches(Mat offset_map, Mat source, int patch_size) {
+    static void dumpNearestPatches(Mat &offset_map, Mat &source, int patch_size, String filename_prefix) {
         for (int x = 0; x < offset_map.cols; x++) {
             for(int y = 0; y < offset_map.rows; y++) {
                 Vec3f offset = offset_map.at<Vec3f>(y, x);
                 Rect nearest_patch_rect(x + offset[0], y + offset[1], patch_size, patch_size);
                 Mat nearest_patch = source(nearest_patch_rect);
-                imwrite(str(format("patch_x_%03d_y_%03d.exr") % x % y), nearest_patch);
+                imwrite(str(format("patch_%s_x_%03d_y_%03d.exr") % filename_prefix % x % y), nearest_patch);
             }
         }
     }
