@@ -1,5 +1,6 @@
 #include "VotedReconstruction.h"
 
+using cv::COLOR_GRAY2BGR;
 using cv::divide;
 using cv::Mat;
 using cv::Rect;
@@ -47,12 +48,9 @@ Mat VotedReconstruction::reconstruct() const {
         }
     }
 
-    // Divide every channel by count.
-    vector<Mat> channels(3);
-    split(reconstructed, channels);
-    for (Mat chan: channels) {
-        divide(chan, count, chan);
-    }
-    merge(channels, reconstructed);
+    // Divide every channel by count (reproduce counts on 3 channels first).
+    Mat weights3d;
+    cvtColor(count, weights3d, COLOR_GRAY2BGR);
+    divide(reconstructed, weights3d, reconstructed);
     return reconstructed;
 }
