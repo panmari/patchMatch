@@ -96,14 +96,16 @@ Mat HoleFilling::run() {
 }
 
 Mat HoleFilling::upscaleSolution(int current_scale) const {
-    Mat upscaled_solution_target_area;
+    Mat upscaled_target_area;
     if (WEXLER_UPSCALE) {
-        // TODO: There is actually a better method for upscaling, see Wexler2007 Section 3.2
-        Mat previous_offset_map = _offset_map_pyr[current_scale + 1];
+        // Better method for upscaling, see Wexler2007 Section 3.2
+        int previous_scale = current_scale + 1;
+        Mat previous_offset_map = _offset_map_pyr[previous_scale];
         Mat source = _img_pyr[current_scale];
-        cv::Size upscaled_solution_size((previous_offset_map.cols - 1) * 2 + _patch_size,
-                                        (previous_offset_map.rows - 1) * 2 + _patch_size);
-        upscaled_solution_target_area = Mat::zeros(upscaled_solution_size, CV_32FC3);
+        cv::Size upscaled_solution_size((previous_offset_map.cols - 1) * 2 + _patch_size*2,
+                                        (previous_offset_map.rows - 1) * 2 + _patch_size*2);
+        Rect target_area_rect = _target_rect_pyr[current_scale];
+        upscaled_target_area = Mat::zeros(upscaled_solution_size, CV_32FC3);
         Mat count = Mat::zeros(upscaled_solution_size, CV_32FC1);
         for (int x = 0; x < previous_offset_map.cols; x++) {
             for (int y = 0; y < previous_offset_map.rows; y++) {
@@ -112,40 +114,37 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
                 int match_x = (x + offset_map_entry[0]) * 2;
                 int match_y = (y + offset_map_entry[1]) * 2;
                 // Get image data of matching patch
-                Rect matching_patch_rect(match_x, match_y, _patch_size, _patch_size);
+                Rect matching_patch_rect(match_x, match_y, _patch_size * 2, _patch_size * 2);
                 Mat matching_patch = source(matching_patch_rect);
 
                 float weight = 1;
                 // Add to all pixels at once.
-                Rect current_patch_rect(x * 2, y * 2, _patch_size, _patch_size);
+                Rect current_patch_rect(x * 2, y * 2, _patch_size * 2, _patch_size * 2);
 
-                upscaled_solution_target_area(current_patch_rect) += matching_patch * weight;
+                upscaled_target_area(current_patch_rect) += matching_patch * weight;
 
                 // Remember for every pixel, how many patches were added up for later division.
                 count(current_patch_rect) += weight;
             }
         }
         vector<Mat> channels(3);
-        split(upscaled_solution_target_area, channels);
+        split(upscaled_target_area, channels);
         for (Mat chan: channels) {
             divide(chan, count, chan);
         }
-        merge(channels, upscaled_solution_target_area);
-        Rect target_area_rect = _target_rect_pyr[current_scale];
-        pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_solution_target_area);
-        if (upscaled_solution_size != target_area_rect.size()) {
-            // Crop to real target area size by taking the rectangular in the middle of reconstructed region.
-            cv::Point2f center(upscaled_solution_size.width / 2.f, upscaled_solution_size.height / 2.f);
-            getRectSubPix(upscaled_solution_target_area, target_area_rect.size(), center, upscaled_solution_target_area);
-        }
-        pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_solution_target_area);
+        merge(channels, upscaled_target_area);
+        pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_target_area);
+        // TODO: Why -1?
+        cv::Point2f center(upscaled_solution_size.width / 2.f, upscaled_solution_size.height / 2.f - 1);
+        getRectSubPix(upscaled_target_area, target_area_rect.size(), center, upscaled_target_area);
+        pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_target_area);
     } else {
         Mat previous_solution = solutionFor(current_scale + 1);
         Mat upscaled_solution;
         pyrUp(previous_solution, upscaled_solution);
-        upscaled_solution_target_area = upscaled_solution(_target_rect_pyr[current_scale]);
+        upscaled_target_area = upscaled_solution(_target_rect_pyr[current_scale]);
     }
-    return upscaled_solution_target_area;
+    return upscaled_target_area;
 }
 
 Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
