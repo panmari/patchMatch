@@ -6,7 +6,17 @@
 class HoleFilling {
 
 public:
+
+    /**
+     * @param img the image of which we want to fill the hole of, usually in L*a*b* color space.
+     * @param hole a bitmask of the hole, non-zero where the hole is, zero otherwise (one channel uint8).
+     * @param patch_size the sizes of the patches to be used. A useful default is 7.
+     */
     HoleFilling(cv::Mat &img, cv::Mat &hole, int patch_size);
+
+    /**
+     * Returns a the full image with the hole inpainted. Has the same color space as the image given in construction.
+     */
     cv::Mat run();
     cv::Mat solutionFor(int scale) const;
 
