@@ -1,7 +1,3 @@
-//
-// Created by moser on 02.10.15.
-//
-
 #ifndef PATCHMATCH_EXHAUSTIVEPATCHMATCH_H
 #define PATCHMATCH_EXHAUSTIVEPATCHMATCH_H
 
@@ -12,10 +8,11 @@
 class ExhaustivePatchMatch {
 
 public:
-    ExhaustivePatchMatch(cv::Mat &img, cv::Mat &img2);
-    cv::Mat match(int patchSize);
+	ExhaustivePatchMatch(cv::Mat &img, cv::Mat &img2, int patch_size);
+    cv::Mat match();
 
 private:
+	int _patch_size;
     cv::cuda::GpuMat _img, _img2, _temp;
     cv::Ptr<cv::cuda::TemplateMatching> _cuda_matcher;
 

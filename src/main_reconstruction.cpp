@@ -1,6 +1,5 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "ExhaustivePatchMatch.h"
 #include "RandomizedPatchMatch.h"
 #include "TrivialReconstruction.h"
 #include "VotedReconstruction.h"
@@ -49,10 +48,7 @@ int main( int argc, char** argv )
 
     RandomizedPatchMatch rpm(source, target, PATCH_SIZE);
 
-    ExhaustivePatchMatch epm(source, target);
-
     Mat minDistImg = rpm.match();
-    //Mat minDistImg = epm.match(PATCH_SIZE);
 
     TrivialReconstruction tr(minDistImg, source, PATCH_SIZE);
     Mat reconstructed = tr.reconstruct();

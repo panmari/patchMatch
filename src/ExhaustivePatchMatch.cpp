@@ -9,35 +9,31 @@ using cv::Rect;
 using cv::Scalar;
 using cv::Vec3f;
 
-ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2) {
+ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2, int patch_size) : _patch_size(patch_size) {
     _img.upload(img);
     _img2.upload(img2);
     _cuda_matcher = createTemplateMatching(CV_32FC3, CV_TM_SQDIFF);
-    _temp.create(_img.rows, _img.cols, CV_32FC1);
+    _temp.create(_img.rows - _patch_size + 1, _img.cols - _patch_size + 1, CV_32FC1);
 }
 
-Mat ExhaustivePatchMatch::match(int patchSize) {
-    // Create the result matrix
-    Mat minDistImg;
-    minDistImg.create(_img.rows, _img.cols, CV_32FC3);
+Mat ExhaustivePatchMatch::match() {
+    Mat offset_map;
+	offset_map.create(_img.rows - _patch_size, _img.cols - _patch_size, CV_32FC3);
 
-    const int matched_pixels = (_img.cols - 2 * patchSize) * (_img.rows - 2 * patchSize);
+	const int matched_pixels = offset_map.cols * offset_map.rows;
     boost::progress_display show_progress(matched_pixels);
     boost::timer timer;
-    for (int x = patchSize; x < _img.cols - patchSize; x++) {
-        for (int y = patchSize; y < _img.rows - patchSize; y++) {
-            Rect rect(x, y, patchSize, patchSize);
+	for (int x = 0; x < offset_map.cols; x++) {
+		for (int y = 0; y < offset_map.rows; y++) {
+			Rect rect(x, y, _patch_size, _patch_size);
             GpuMat patch = _img2(rect);
             double minVal; Point minLoc;
             matchSinglePatch(patch, &minVal, &minLoc);
-            minDistImg.at<Vec3f>(y, x) = Vec3f(minLoc.x - x, minLoc.y - y, minVal);
+			offset_map.at<Vec3f>(y, x) = Vec3f(minLoc.x - x, minLoc.y - y, static_cast<float>(minVal));
             ++show_progress;
         }
     }
-    std::cout << timer.elapsed() << std::endl;
-    Scalar squared_diff = sum(minDistImg);
-    std::cout << squared_diff[2] << std::endl;
-    return minDistImg;
+	return offset_map;
 }
 
 void ExhaustivePatchMatch::matchSinglePatch(GpuMat &patch, double *minVal, Point *minLoc) {
