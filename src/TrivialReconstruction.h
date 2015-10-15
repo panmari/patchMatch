@@ -14,10 +14,10 @@ public:
      * the y-channel being the y-offset.
      * The patch image is assumed to be the one referenced in offset_map.
      */
-    TrivialReconstruction(cv::Mat &offset_map, cv::Mat &patch_img, int patch_size);
+    TrivialReconstruction(cv::Mat &offset_map, cv::Mat &source_img, int patch_size);
     cv::Mat reconstruct() const;
 private:
-    cv::Mat _offset_map, _patch_img;
+    cv::Mat _offset_map, _source_img;
     int _patch_size;
 };
 
