@@ -1,8 +1,10 @@
 #include "opencv2/ts.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include "../src/util.h"
 
 using namespace std;
 using namespace cv;
+using namespace pmutil;
 
 TEST(performance_test, performance_test_division_of_3d_by_1d) {
     vector<Size> sizes{Size(2, 2), Size(10, 10), Size(100, 100), Size(1000, 1000), Size(2000, 2000)};
@@ -95,4 +97,43 @@ TEST(performance_test, performance_test_division_of_3d_by_1d) {
         absdiff(rec1, rec4, diff);
         EXPECT_EQ(0, countNonZero(diff.reshape(1)));
     }
+}
+
+// On Windows, method 2 is about 20 times faster than method 1, especially for small windows.
+TEST(performance_test, ssd_methods) {
+	vector<Size> sizes{ Size(5, 5), Size(7, 7), Size(10, 10), Size(100, 100), Size(1000, 1000), Size(2000, 2000) };
+	theRNG().state = 100;
+	cout << "Size \t\tMethod 1 \tMethod 2" << endl;
+	Mat full_mat1(Size(5000, 5000), CV_32FC3);
+	randu(full_mat1, 0.0, 1.0);
+
+	Mat full_mat2(Size(5000, 5000), CV_32FC3);
+	randu(full_mat2, 0.0, 1.0);
+
+	for (int is = 0; is < sizes.size(); ++is) {
+
+		Size sz = sizes[is];
+		Mat mat1 = full_mat1(Rect(Point(10, 10), sz));
+		Mat mat2 = full_mat2(Rect(Point(10, 10), sz));
+
+		// Method 1
+		double tic1 = double(getTickCount());
+		float ssd1 = pmutil::ssd(mat1, mat2);
+		double toc1 = (double(getTickCount() - tic1)) * 1000. / getTickFrequency();
+
+		// Method 2
+		// Taken from http://docs.opencv.org/doc/tutorials/core/how_to_scan_images/how_to_scan_images.html
+		double tic4 = double(getTickCount());
+		double ssd4 = pmutil::ssd_unsafe(mat1, mat2);
+		double toc4 = (double(getTickCount() - tic4)) * 1000. / getTickFrequency();
+
+		cout << sz << " \t" << toc1 << " \t" << toc4 << endl;
+
+		// Check for equality of methods.
+		float relative_allowed_error = 0.0001f;
+		float absolute_allowed_error = ssd1 * relative_allowed_error;
+		
+		EXPECT_NEAR(ssd1, ssd4, absolute_allowed_error);
+		
+	}
 }

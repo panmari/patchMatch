@@ -29,6 +29,33 @@ namespace pmutil {
     }
 
     /**
+	 * Same as ssd, but not safe and will access garbage if given the possibility.
+	 * Only works for float matrices right now!
+	 * TODO: extend for other types.
+	 */
+	static double ssd_unsafe(Mat &img, Mat &img2) {
+		double ssd = 0.f;
+		int nRows = img.rows;
+		int nCols = img.cols * img.channels();
+		// We can do even better if the values are in one huge block.
+		if (img.isContinuous() && img2.isContinuous())
+		{
+			nCols *= nRows;
+			nRows = 1;
+		}
+		for (int i = 0; i < nRows; i++) {
+			float *p1 = img.ptr<float>(i);
+			float *p2 = img2.ptr<float>(i);
+			for (int j = 0; j < nCols; j++)
+			{
+				float diff = p1[j] - p2[j];
+				ssd += diff * diff;
+			}
+		}
+		return ssd;
+	}
+
+    /**
      * Convert images to lab retrieved from imread.
      * L*a*b has the following ranges for each channel:
      * L: [0, 100]

@@ -17,7 +17,7 @@ using cv::Rect;
 using cv::RNG;
 using cv::Vec3f;
 using std::max;
-using pmutil::ssd;
+using pmutil::ssd_unsafe;
 
 /**
  * Number times propagation/random_search is executed for every patch per iteration.
@@ -140,7 +140,7 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candi
     Rect source_img_rect(Point(0,0), source_img.size());
     if ((candidate_rect & source_img_rect) == candidate_rect) {
         Mat candidate_patch = source_img(candidate_rect);
-        float ssd_value = (float) ssd(patch, candidate_patch);
+		float ssd_value = static_cast<float>(ssd_unsafe(patch, candidate_patch));
         if (ssd_value < offset_map_entry->val[2]) {
             offset_map_entry->val[0] = candidate_offset.x;
             offset_map_entry->val[1] = candidate_offset.y;
@@ -164,7 +164,7 @@ void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &source_img, Mat &tar
             Rect currentPatchRect(x, y, _patch_size, _patch_size);
             Mat currentPatch = target_img(currentPatchRect);
             Mat randomPatch = source_img(Rect(x + randomX, y + randomY, _patch_size, _patch_size));
-            float initalSsd = (float) ssd(currentPatch, randomPatch);
+			float initalSsd = static_cast<float>(ssd_unsafe(currentPatch, randomPatch));
             offset_map.at<Vec3f>(y, x) = Vec3f(randomX, randomY, initalSsd);
         }
     }
