@@ -23,13 +23,10 @@ Mat ExhaustivePatchMatch::match() {
 	offset_map.create(_img.rows - _patch_size, _img.cols - _patch_size, CV_32FC3);
 
 	const unsigned long matched_pixels = static_cast<unsigned long>(offset_map.cols * offset_map.rows);
-    if (!_show_progress_bar) {
-        // Redirect stdout to null.
-        // TODO: find alternative way that doesn't destroy cout.
-        boost::iostreams::stream_buffer<boost::iostreams::null_sink> null_out{boost::iostreams::null_sink()};
-        std::cout.rdbuf(&null_out);
-    }
-    boost::progress_display show_progress(matched_pixels);
+
+    boost::iostreams::stream<boost::iostreams::null_sink> nullout { boost::iostreams::null_sink{} };
+    std::ostream& out = _show_progress_bar ? std::cout : nullout;
+    boost::progress_display show_progress(matched_pixels, out);
 
 	for (int x = 0; x < offset_map.cols; x++) {
 		for (int y = 0; y < offset_map.rows; y++) {
