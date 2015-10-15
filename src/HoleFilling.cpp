@@ -146,7 +146,14 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         Rect prev_target_area_rect = _target_rect_pyr[previous_scale];
         Rect target_area_rect = _target_rect_pyr[current_scale];
         Point offset = target_area_rect.tl() - prev_target_area_rect.tl() * 2;
-        upscaled_target_area = upscaled_target_area(Rect(offset, target_area_rect.size()));
+        Rect cutout_rect(offset, target_area_rect.size());
+        // In case our target area was right at the edge of the image, we might need to increase the size a bit here.
+        if (cutout_rect.x + cutout_rect.width > upscaled_target_area.cols ||
+                cutout_rect.y + cutout_rect.height > upscaled_target_area.rows) {
+            copyMakeBorder(upscaled_target_area, upscaled_target_area, 0, 2, 0, 2, cv::BORDER_REFLECT);
+        }
+
+        upscaled_target_area = upscaled_target_area(cutout_rect);
 
         if (DUMP_UPSCALING_DEBUG_OUTPUT) {
             Rect upscaled_rect(prev_target_area_rect.x * 2, prev_target_area_rect.y * 2,
