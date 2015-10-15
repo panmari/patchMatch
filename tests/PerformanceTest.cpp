@@ -103,7 +103,7 @@ TEST(performance_test, performance_test_division_of_3d_by_1d) {
 TEST(performance_test, ssd_methods) {
 	vector<Size> sizes{ Size(5, 5), Size(7, 7), Size(10, 10), Size(100, 100), Size(1000, 1000), Size(2000, 2000) };
 	theRNG().state = 100;
-	cout << "Size \t\tMethod 1 \tMethod 2" << endl;
+	cout << "Size \t\tMethod 1 \tMethod 2 \tMethod 3" << endl;
 	Mat full_mat1(Size(5000, 5000), CV_32FC3);
 	randu(full_mat1, 0.0, 1.0);
 
@@ -118,22 +118,29 @@ TEST(performance_test, ssd_methods) {
 
 		// Method 1
 		double tic1 = double(getTickCount());
-		float ssd1 = pmutil::ssd(mat1, mat2);
+		double ssd1 = pmutil::ssd(mat1, mat2);
 		double toc1 = (double(getTickCount() - tic1)) * 1000. / getTickFrequency();
 
-		// Method 2
+		// Method 2, built in norm
+		// See http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#norm
+		double tic2 = double(getTickCount());
+		double ssd2_root = norm(mat1, mat2, NORM_L2);
+		double ssd2 = ssd2_root * ssd2_root;
+		double toc2 = (double(getTickCount() - tic2)) * 1000. / getTickFrequency();
+
+		// Method 3
 		// Taken from http://docs.opencv.org/doc/tutorials/core/how_to_scan_images/how_to_scan_images.html
 		double tic4 = double(getTickCount());
 		double ssd4 = pmutil::ssd_unsafe(mat1, mat2);
 		double toc4 = (double(getTickCount() - tic4)) * 1000. / getTickFrequency();
 
-		cout << sz << " \t" << toc1 << " \t" << toc4 << endl;
+		cout << sz << " \t" << toc1 << " \t" << toc2 << " \t" << toc4 << endl;
 
 		// Check for equality of methods.
 		float relative_allowed_error = 0.0001f;
 		float absolute_allowed_error = ssd1 * relative_allowed_error;
 		
 		EXPECT_NEAR(ssd1, ssd4, absolute_allowed_error);
-		
+		EXPECT_NEAR(ssd1, ssd2, absolute_allowed_error);
 	}
 }
