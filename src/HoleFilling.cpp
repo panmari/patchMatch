@@ -103,7 +103,8 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         Mat previous_offset_map = _offset_map_pyr[previous_scale];
         // Give 1 border, since we are using patches twice the size.
         Mat source;
-        copyMakeBorder(_img_pyr[current_scale], source, 0, 10, 0, 10, cv::BORDER_REFLECT);
+        copyMakeBorder(_img_pyr[current_scale], source, 0, 1, 0, 1, cv::BORDER_REFLECT);
+        // Size is slightly different, since patches have double the size and stride 2.
         cv::Size upscaled_solution_size((previous_offset_map.cols - 1) * 2 + _patch_size*2,
                                         (previous_offset_map.rows - 1) * 2 + _patch_size*2);
         upscaled_target_area = Mat::zeros(upscaled_solution_size, CV_32FC3);
