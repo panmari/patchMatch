@@ -67,8 +67,11 @@ Mat HoleFilling::run() {
 
         } else {
             Mat upscaled_solution = upscaleSolution(scale);
-            // Copy upscaled solution to current target area.
-            upscaled_solution.copyTo(_target_area_pyr[scale]);
+            // Copy upscaled solution at hole region to current target area.
+            _target_area_pyr[scale] = source(_target_rect_pyr[scale]).clone();
+            // Only copy upscaled solution in hole region.
+            Mat hole_mask = _hole_pyr[scale];
+            upscaled_solution.copyTo(_target_area_pyr[scale], hole_mask(_target_rect_pyr[scale]));
         }
         // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
         // TODO: Possibly set some other value here.

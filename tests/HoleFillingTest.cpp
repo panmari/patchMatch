@@ -74,7 +74,7 @@ TEST(hole_filling_test, rectangular_hole_on_repeated_texture_should_give_good_re
     // Add some hole
     Mat hole_mask = Mat::zeros(img.size(), CV_8U);
 
-    hole_mask(Rect(70, 65, 5, 20)) = 1;
+    hole_mask(Rect(72, 65, 5, 20)) = 1;
     int patch_size = 7;
     HoleFilling hf(img, hole_mask, patch_size);
 
