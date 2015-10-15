@@ -1,5 +1,6 @@
 #include "ExhaustivePatchMatch.h"
 #include <boost/progress.hpp>
+#include "boost/iostreams/stream.hpp"
 
 using cv::cuda::createTemplateMatching;
 using cv::cuda::GpuMat;
@@ -9,7 +10,8 @@ using cv::Rect;
 using cv::Scalar;
 using cv::Vec3f;
 
-ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2, int patch_size) : _patch_size(patch_size) {
+ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2, int patch_size, bool show_progress_bar) :
+        _patch_size(patch_size), _show_progress_bar(show_progress_bar) {
     _img.upload(img);
     _img2.upload(img2);
     _cuda_matcher = createTemplateMatching(CV_32FC3, CV_TM_SQDIFF);
@@ -20,9 +22,15 @@ Mat ExhaustivePatchMatch::match() {
     Mat offset_map;
 	offset_map.create(_img.rows - _patch_size, _img.cols - _patch_size, CV_32FC3);
 
-	const int matched_pixels = offset_map.cols * offset_map.rows;
+	const unsigned long matched_pixels = static_cast<unsigned long>(offset_map.cols * offset_map.rows);
+    if (!_show_progress_bar) {
+        // Redirect stdout to null.
+        // TODO: find alternative way that doesn't destroy cout.
+        boost::iostreams::stream_buffer<boost::iostreams::null_sink> null_out{boost::iostreams::null_sink()};
+        std::cout.rdbuf(&null_out);
+    }
     boost::progress_display show_progress(matched_pixels);
-    boost::timer timer;
+
 	for (int x = 0; x < offset_map.cols; x++) {
 		for (int y = 0; y < offset_map.rows; y++) {
 			Rect rect(x, y, _patch_size, _patch_size);
@@ -30,8 +38,8 @@ Mat ExhaustivePatchMatch::match() {
             double minVal; Point minLoc;
             matchSinglePatch(patch, &minVal, &minLoc);
 			offset_map.at<Vec3f>(y, x) = Vec3f(minLoc.x - x, minLoc.y - y, static_cast<float>(minVal));
-            ++show_progress;
         }
+        show_progress += offset_map.rows;
     }
 	return offset_map;
 }
