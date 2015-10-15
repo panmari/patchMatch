@@ -104,15 +104,17 @@ TEST(performance_test, ssd_methods) {
 	vector<Size> sizes{ Size(5, 5), Size(7, 7), Size(10, 10), Size(100, 100), Size(1000, 1000), Size(2000, 2000) };
 	theRNG().state = 100;
 	cout << "Size \t\tMethod 1 \tMethod 2 \tMethod 3" << endl;
-	Mat full_mat1(Size(5000, 5000), CV_32FC3);
+	Size full_size(2100, 2100);
+	Mat full_mat1(full_size, CV_32FC3);
 	randu(full_mat1, 0.0, 1.0);
 
-	Mat full_mat2(Size(5000, 5000), CV_32FC3);
+	Mat full_mat2(full_size, CV_32FC3);
 	randu(full_mat2, 0.0, 1.0);
 
 	for (int is = 0; is < sizes.size(); ++is) {
 
 		Size sz = sizes[is];
+		// Use only a cutout of full matrix, so it's not continuous (as in actual code).
 		Mat mat1 = full_mat1(Rect(Point(10, 10), sz));
 		Mat mat2 = full_mat2(Rect(Point(10, 10), sz));
 
