@@ -1,12 +1,18 @@
 #include "opencv2/ts.hpp"
+#include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include "../src/ExhaustivePatchMatch.h"
 #include "../src/RandomizedPatchMatch.h"
+#include "../src/util.h"
 
+using cv::imread;
 using cv::Mat;
 using cv::Scalar;
 using cv::Vec3f;
+using pmutil::convert_for_computation;
 
 const double EPSILON = 1e-6;
+
 TEST(randomized_patch_match_test, on_two_identical_trivial_images)
 {
     Mat img1 = Mat::ones(20, 20, CV_32FC1);
@@ -77,4 +83,30 @@ TEST(randomized_patch_match_test, all_offsets_inside_image_on_initialized_offset
             ASSERT_LT(matching_patch_y, img2.rows) << "Failed for offset in (" << x << "," << y << ")";
         }
     }
+}
+
+TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
+{
+	Mat source = imread("test_images/sonne1.PNG");
+	Mat target = imread("test_images/sonne2.PNG");
+	const float resize_factor = 0.25f;
+	pmutil::convert_for_computation(source, resize_factor);
+	pmutil::convert_for_computation(target, resize_factor);
+	const int patch_size = 7;
+	RandomizedPatchMatch rpm(source, target, patch_size);
+	Mat diff_rpm = rpm.match();
+
+	ExhaustivePatchMatch epm(source, target, patch_size);
+	Mat diff_epm = epm.match();
+
+	const int nr_pixels = target.cols * target.rows;
+	Scalar diff_sums_rpm = sum(diff_rpm);
+	double mean_ssd_rpm = diff_sums_rpm[2] / nr_pixels;
+
+	Scalar diff_sums_epm = sum(diff_epm);
+	double mean_ssd_epm = diff_sums_epm[2] / nr_pixels;
+
+	// This is in L*a*b* space, so the errors are quite high.
+	ASSERT_GT(mean_ssd_rpm, mean_ssd_epm);
+	ASSERT_NEAR(mean_ssd_rpm, mean_ssd_epm, 1000);
 }
