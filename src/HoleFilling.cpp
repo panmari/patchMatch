@@ -101,12 +101,14 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         // Better method for upscaling, see Wexler2007 Section 3.2
         int previous_scale = current_scale + 1;
         Mat previous_offset_map = _offset_map_pyr[previous_scale];
-        Mat source = _img_pyr[current_scale];
+        // Give 1 border, since we are using patches twice the size.
+        Mat source;
+        copyMakeBorder(_img_pyr[current_scale], source, 0, 10, 0, 10, cv::BORDER_REFLECT);
         cv::Size upscaled_solution_size((previous_offset_map.cols - 1) * 2 + _patch_size*2,
                                         (previous_offset_map.rows - 1) * 2 + _patch_size*2);
-        Rect target_area_rect = _target_rect_pyr[current_scale];
         upscaled_target_area = Mat::zeros(upscaled_solution_size, CV_32FC3);
         Mat count = Mat::zeros(upscaled_solution_size, CV_32FC1);
+
         for (int x = 0; x < previous_offset_map.cols; x++) {
             for (int y = 0; y < previous_offset_map.rows; y++) {
                 // Go over all patches that contain this image.
@@ -133,11 +135,20 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
             divide(chan, count, chan);
         }
         merge(channels, upscaled_target_area);
+        Mat prev_target_area =  _target_area_pyr[previous_scale];
+        pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_not_scaled.exr", prev_target_area);
         pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_target_area);
-        // TODO: Why -1?
-        cv::Point2f center(upscaled_solution_size.width / 2.f, upscaled_solution_size.height / 2.f - 1);
-        getRectSubPix(upscaled_target_area, target_area_rect.size(), center, upscaled_target_area);
+        //getRectSubPix(upscaled_target_area, target_area_rect.size(), center, upscaled_target_area);
+        // TODO: This introduces 1 pixel offset once in a while. Cut out correct target area.
+        Rect prev_target_area_rect = _target_rect_pyr[previous_scale];
+        Rect target_area_rect = _target_rect_pyr[current_scale];
+        Point offset = target_area_rect.tl() - prev_target_area_rect.tl() * 2;
+        upscaled_target_area = upscaled_target_area(Rect(offset, target_area_rect.size()));
         pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_target_area);
+
+        cv::rectangle(source, target_area_rect, Scalar(1,0,0));
+        pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_target_area_in_img.exr", source);
+
     } else {
         Mat previous_solution = solutionFor(current_scale + 1);
         Mat upscaled_solution;

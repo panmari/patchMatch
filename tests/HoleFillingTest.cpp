@@ -106,7 +106,7 @@ TEST(hole_filling_test, elliptical_hole_on_repeated_texture_should_give_good_res
     // Add some hole
     Mat hole_mask = Mat::zeros(img.size(), CV_8U);
 
-    Point center(100, 100);
+    Point center(100, 110);
     Size axis(20, 5);
     float angle = 20;
     ellipse(hole_mask, center, axis, angle, 0, 360, Scalar(1,1,1), -1);
