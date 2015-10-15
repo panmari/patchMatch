@@ -62,8 +62,7 @@ TEST(hole_filling_test, square_hole_on_repeated_texture_should_give_good_result)
     Mat img_bgr;
     cvtColor(img, img_bgr, CV_Lab2BGR);
     double ssd = pmutil::ssd(img_bgr, filled);
-    double mse = ssd / (img_bgr.cols * img_bgr.rows);
-    EXPECT_LT(mse, 1e-4);
+    EXPECT_LT(ssd, 0.2);
 }
 
 TEST(hole_filling_test, rectangular_hole_on_repeated_texture_should_give_good_result)
@@ -94,8 +93,7 @@ TEST(hole_filling_test, rectangular_hole_on_repeated_texture_should_give_good_re
     Mat img_bgr;
     cvtColor(img, img_bgr, CV_Lab2BGR);
     double ssd = pmutil::ssd(img_bgr, filled);
-    double mse = ssd / (img_bgr.cols * img_bgr.rows);
-    EXPECT_LT(mse, 1e-4);
+    EXPECT_LT(ssd, 0.2);
 }
 
 TEST(hole_filling_test, elliptical_hole_on_repeated_texture_should_give_good_result)
@@ -129,7 +127,5 @@ TEST(hole_filling_test, elliptical_hole_on_repeated_texture_should_give_good_res
     Mat img_bgr;
     cvtColor(img, img_bgr, CV_Lab2BGR);
     double ssd = pmutil::ssd(img_bgr, filled);
-    double mse = ssd / (img_bgr.cols * img_bgr.rows);
-    // TODO: This does not give satisfying results.
-    EXPECT_LT(mse, 1e-5);
+    EXPECT_LT(ssd, 0.2);
 }
