@@ -129,12 +129,11 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
                 count(current_patch_rect) += weight;
             }
         }
-        vector<Mat> channels(3);
-        split(upscaled_target_area, channels);
-        for (Mat chan: channels) {
-            divide(chan, count, chan);
-        }
-        merge(channels, upscaled_target_area);
+        // Divide every channel by count (reproduce counts on 3 channels first).
+        Mat weights3d;
+        cvtColor(count, weights3d, cv::COLOR_GRAY2BGR);
+        divide(upscaled_target_area, weights3d, upscaled_target_area);
+
         Mat prev_target_area =  _target_area_pyr[previous_scale];
         pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_not_scaled.exr", prev_target_area);
         pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_target_area);
@@ -143,6 +142,8 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         Rect prev_target_area_rect = _target_rect_pyr[previous_scale];
         Rect target_area_rect = _target_rect_pyr[current_scale];
         Point offset = target_area_rect.tl() - prev_target_area_rect.tl() * 2;
+
+
         upscaled_target_area = upscaled_target_area(Rect(offset, target_area_rect.size()));
         pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_target_area);
 
