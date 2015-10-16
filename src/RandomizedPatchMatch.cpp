@@ -157,7 +157,7 @@ void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &source_img, Mat &tar
     offset_map.create(target_img.rows - _patch_size, target_img.cols - _patch_size, CV_32FC3);
     for (int x = 0; x < offset_map.cols; x++) {
         for (int y = 0; y < offset_map.rows; y++) {
-            // Choose offset carfully, so resulting point (when added to current coordinate), is not outside image.
+            // Choose offset carefully, so resulting point (when added to current coordinate), is not outside image.
             int randomX = (rand() % (source_img.cols - _patch_size)) - x;
             int randomY = (rand() % (source_img.rows - _patch_size)) - y;
 

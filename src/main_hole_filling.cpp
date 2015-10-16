@@ -2,7 +2,6 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "HoleFilling.h"
 #include "util.h"
-
 #include <iostream>
 
 using cv::getTickCount;
@@ -45,7 +44,6 @@ int main( int argc, char** argv )
     convert_for_computation(source, RESIZE_FACTOR);
 
     double tic = double(getTickCount());
-
     HoleFilling hf(source, hole_mask, PATCH_SIZE);
     Mat filled = hf.run();
     double toc = (double(getTickCount() - tic)) * 1000. / getTickFrequency();
