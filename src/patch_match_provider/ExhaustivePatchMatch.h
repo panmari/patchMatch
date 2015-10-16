@@ -4,8 +4,9 @@
 #include "opencv2/core/cuda.hpp"
 #include "opencv2/cudaimgproc.hpp"
 #include "opencv2/cudaarithm.hpp"
+#include "PatchMatchProvider.h"
 
-class ExhaustivePatchMatch {
+class ExhaustivePatchMatch : public PatchMatchProvider {
 
 public:
 	ExhaustivePatchMatch(cv::Mat &img, cv::Mat &img2, int patch_size, bool show_progress_bar = false);

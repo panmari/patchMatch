@@ -1,5 +1,5 @@
 #include "HoleFilling.h"
-#include "RandomizedPatchMatch.h"
+#include "patch_match_provider/RandomizedPatchMatch.h"
 #include "VotedReconstruction.h"
 #include "util.h"
 #include "boost/format.hpp"

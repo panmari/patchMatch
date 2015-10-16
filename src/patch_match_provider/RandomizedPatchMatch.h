@@ -6,8 +6,9 @@
 #define PATCHMATCH_RANDOMIZEDPATCHMATCH_H
 
 #include "opencv2/imgproc/imgproc.hpp"
+#include "PatchMatchProvider.h"
 
-class RandomizedPatchMatch {
+class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
     RandomizedPatchMatch(cv::Mat &source, cv::Mat &target, int patch_size);

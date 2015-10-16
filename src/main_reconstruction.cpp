@@ -1,6 +1,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "RandomizedPatchMatch.h"
+#include "patch_match_provider/RandomizedPatchMatch.h"
 #include "TrivialReconstruction.h"
 #include "VotedReconstruction.h"
 #include "util.h"

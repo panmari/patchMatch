@@ -1,6 +1,6 @@
 #include "RandomizedPatchMatch.h"
 #include "opencv2/highgui/highgui.hpp"
-#include "util.h"
+#include "../util.h"
 #include <iostream>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -153,6 +153,7 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candi
 
 void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &source_img, Mat &target_img, Mat &offset_map) const {
     // Seed random generator to have reproducable results.
+    // TODO: Use a better initialization to get better results over multiple EM-Steps.
     srand(target_img.rows * target_img.cols);
     offset_map.create(target_img.rows - _patch_size, target_img.cols - _patch_size, CV_32FC3);
     for (int x = 0; x < offset_map.cols; x++) {
