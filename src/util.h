@@ -33,7 +33,7 @@ namespace pmutil {
 	 * Only works for float matrices right now!
 	 * TODO: extend for other types.
 	 */
-	static double ssd_unsafe(Mat &img, Mat &img2) {
+    static double ssd_unsafe(Mat &img, Mat &img2, double limit = INFINITY) {
 		double ssd = 0.f;
 		int nRows = img.rows;
 		int nCols = img.cols * img.channels();
@@ -51,6 +51,10 @@ namespace pmutil {
 				float diff = p1[j] - p2[j];
 				ssd += diff * diff;
 			}
+            // If we're higher than previous limit, return prematurely (since we're only looking for minimum).
+            if (ssd >= limit) {
+                return ssd;
+            }
 		}
 		return ssd;
 	}

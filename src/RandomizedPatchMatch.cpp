@@ -140,8 +140,9 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candi
     Rect source_img_rect(Point(0,0), source_img.size());
     if ((candidate_rect & source_img_rect) == candidate_rect) {
         Mat candidate_patch = source_img(candidate_rect);
-		float ssd_value = static_cast<float>(ssd_unsafe(patch, candidate_patch));
-        if (ssd_value < offset_map_entry->val[2]) {
+        float previous_ssd_value = offset_map_entry->val[2];
+		float ssd_value = static_cast<float>(ssd_unsafe(patch, candidate_patch, previous_ssd_value));
+        if (ssd_value < previous_ssd_value) {
             offset_map_entry->val[0] = candidate_offset.x;
             offset_map_entry->val[1] = candidate_offset.y;
             offset_map_entry->val[2] = ssd_value;
