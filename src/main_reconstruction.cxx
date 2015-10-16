@@ -29,7 +29,7 @@ const int PATCH_SIZE = 7;
  */
 int main( int argc, char** argv )
 {
-    /// Load image and template
+    // Load image and template
     Mat source = imread( argv[1], 1 );
     Mat target = imread( argv[2], 1);
 

@@ -18,7 +18,7 @@ using pmutil::imwrite_lab;
 using std::cout;
 using std::endl;
 
-const float RESIZE_FACTOR = 1;
+const float RESIZE_FACTOR = 0.5;
 const int PATCH_SIZE = 7;
 
 /**
