@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+using cv::getTickCount;
+using cv::getTickFrequency;
 using cv::imread;
 using cv::inRange;
 using cv::Mat;
@@ -17,7 +19,7 @@ using pmutil::imwrite_lab;
 using std::cout;
 using std::endl;
 
-const float RESIZE_FACTOR = 0.5;
+const float RESIZE_FACTOR = 1;
 const int PATCH_SIZE = 7;
 
 /**
@@ -42,8 +44,11 @@ int main( int argc, char** argv )
     }    // For fast testing, make it tiny
     convert_for_computation(source, RESIZE_FACTOR);
 
+    double tic = double(getTickCount());
+
     HoleFilling hf(source, hole_mask, PATCH_SIZE);
     Mat filled = hf.run();
+    double toc = (double(getTickCount() - tic)) * 1000. / getTickFrequency();
 
     imwrite_lab("result.exr", filled);
 
@@ -60,6 +65,7 @@ int main( int argc, char** argv )
         cvtColor(filled, filled_bgr, CV_Lab2BGR);
 
         cout << "SSD between original and hole filled version: " << ssd(original, filled_bgr) << endl;
+        cout << "Time: " << toc << endl;
     }
     return 0;
 }
