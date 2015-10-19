@@ -18,7 +18,7 @@ public:
     VotedReconstruction(const cv::Mat &offset_map, const cv::Mat &source, const cv::Mat &source_grad_x,
                         const cv::Mat &source_grad_y, int patch_size);
 
-    cv::Mat reconstruct() const;
+    void reconstruct(cv::Mat &reconstructed) const;
 
 private:
     const cv::Mat _offset_map, _source, _source_grad_x, _source_grad_y;

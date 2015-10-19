@@ -62,7 +62,8 @@ int main( int argc, char** argv )
     computeGradientY(source, grad_y);
 
     VotedReconstruction vr(minDistImg, source, grad_x, grad_y, PATCH_SIZE);
-    Mat reconstructed2 = vr.reconstruct();
+    Mat reconstructed2;
+    vr.reconstruct(reconstructed2);
     cvtColor(reconstructed2, reconstructed2, CV_Lab2BGR);
     imwrite("reconstructed_voted.exr", reconstructed2);
 

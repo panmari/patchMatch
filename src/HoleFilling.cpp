@@ -90,7 +90,8 @@ Mat HoleFilling::run() {
             }
             VotedReconstruction vr(_offset_map_pyr[scale], source, rmp.getSourceGradientX(), rmp.getSourceGradientY(),
                                    _patch_size);
-            Mat reconstructed = vr.reconstruct();
+            Mat reconstructed;
+            vr.reconstruct(reconstructed);
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
             Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
             reconstructed.copyTo(_target_area_pyr[scale], write_back_mask);

@@ -18,8 +18,11 @@ VotedReconstruction::VotedReconstruction(const Mat &offset_map, const Mat &sourc
         _offset_map(offset_map), _source(source), _source_grad_x(source_grad_x), _source_grad_y(source_grad_y),
         _patch_size(patch_size) { }
 
-Mat VotedReconstruction::reconstruct() const {
-    Mat reconstructed = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
+void VotedReconstruction::reconstruct(Mat &reconstructed) const {
+    reconstructed = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
+    Mat reconstructed_x_gradient = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
+    Mat reconstructed_y_gradient = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
+
     Mat count = Mat::zeros(reconstructed.size(), CV_32FC1);
     for (int x = 0; x < _offset_map.cols; x++) {
         for (int y = 0; y < _offset_map.rows; y++) {
@@ -30,6 +33,8 @@ Mat VotedReconstruction::reconstruct() const {
             // Get image data of matching patch
             Rect matching_patch_rect(match_x, match_y, _patch_size, _patch_size);
             Mat matching_patch = _source(matching_patch_rect);
+            Mat matching_patch_grad_x = _source_grad_x(matching_patch_rect);
+            Mat matching_patch_grad_y = _source_grad_y(matching_patch_rect);
 
             float weight;
             if (WEIGHTED_BY_SIMILARITY) {
@@ -44,7 +49,8 @@ Mat VotedReconstruction::reconstruct() const {
             Rect current_patch_rect(x, y, _patch_size, _patch_size);
 
             reconstructed(current_patch_rect) += matching_patch * weight;
-
+            reconstructed_x_gradient(current_patch_rect) += matching_patch_grad_x;
+            reconstructed_y_gradient(current_patch_rect) += matching_patch_grad_y;
             // Remember for every pixel, how many patches were added up for later division.
             count(current_patch_rect) += weight;
         }
@@ -54,5 +60,6 @@ Mat VotedReconstruction::reconstruct() const {
     Mat weights3d;
     cvtColor(count, weights3d, COLOR_GRAY2BGR);
     divide(reconstructed, weights3d, reconstructed);
-    return reconstructed;
+    divide(reconstructed_x_gradient, weights3d, reconstructed_x_gradient);
+    divide(reconstructed_y_gradient, weights3d, reconstructed_y_gradient);
 }
