@@ -187,7 +187,7 @@ Rect HoleFilling::computeTargetRect(const Mat &img, const Mat &hole, int patch_s
 
 
     Rect target_rect(Point(min_x - patch_size + 1, min_y - patch_size + 1),
-                     Point(max_x + patch_size, max_y + patch_size));
+                     Point(max_x + patch_size - 1, max_y + patch_size - 1));
 
     // Crop to image size.
     target_rect = target_rect & Rect(Point(0, 0), img.size());

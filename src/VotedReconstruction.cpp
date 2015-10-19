@@ -5,6 +5,7 @@ using cv::COLOR_GRAY2BGR;
 using cv::divide;
 using cv::Mat;
 using cv::Rect;
+using cv::Size;
 using cv::Vec3f;
 
 /**
@@ -19,9 +20,10 @@ VotedReconstruction::VotedReconstruction(const Mat &offset_map, const Mat &sourc
         _patch_size(patch_size) { }
 
 void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
-    Mat reconstructed = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
-    Mat reconstructed_x_gradient = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
-    Mat reconstructed_y_gradient = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
+    Size reconstructed_size(_offset_map.rows + _patch_size - 1, _offset_map.cols + _patch_size - 1);
+    Mat reconstructed = Mat::zeros(reconstructed_size, CV_32FC3);
+    Mat reconstructed_x_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
+    Mat reconstructed_y_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
 
     Mat count = Mat::zeros(reconstructed.size(), CV_32FC1);
     for (int x = 0; x < _offset_map.cols; x++) {

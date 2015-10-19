@@ -170,7 +170,7 @@ void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, co
     // Seed random generator to have reproducable results.
     // TODO: Use a better initialization to get better results over multiple EM-Steps.
     srand(target_img.rows * target_img.cols);
-    offset_map.create(target_img.rows - _patch_size, target_img.cols - _patch_size, CV_32FC3);
+    offset_map.create(target_img.rows - _patch_size + 1, target_img.cols - _patch_size + 1, CV_32FC3);
     for (int x = 0; x < offset_map.cols; x++) {
         for (int y = 0; y < offset_map.rows; y++) {
             // Choose offset carefully, so resulting point (when added to current coordinate), is not outside image.
