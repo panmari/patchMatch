@@ -133,8 +133,8 @@ cv::Mat RandomizedPatchMatch::match() {
     return _offset_map_pyr[0];
 }
 
-void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candidate_offset,
-                                                        Rect &candidate_rect, Mat &source_img,
+void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Mat &patch, const Point &candidate_offset,
+                                                        const Rect &candidate_rect, const Mat &source_img,
                                                         Vec3f *offset_map_entry) const {
     // Check if it's fully inside, only try to update then
     Rect source_img_rect(Point(0,0), source_img.size());
@@ -151,7 +151,8 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(Mat &patch, Point &candi
 
 }
 
-void RandomizedPatchMatch::initializeWithRandomOffsets(Mat &source_img, Mat &target_img, Mat &offset_map) const {
+void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, const Mat &target_img,
+                                                       Mat &offset_map) const {
     // Seed random generator to have reproducable results.
     // TODO: Use a better initialization to get better results over multiple EM-Steps.
     srand(target_img.rows * target_img.cols);

@@ -32,14 +32,15 @@ private:
      * Every entry at offset_map is set to a random & valid (i. e. patch it's pointing to is inside image) offset.
      * Also the corresponding SSD is computed.
      */
-    void initializeWithRandomOffsets(cv::Mat &target_img, cv::Mat &source_img, cv::Mat &offset_map) const;
+    void initializeWithRandomOffsets(const cv::Mat &target_img, const cv::Mat &source_img, cv::Mat &offset_map) const;
 
     /**
      * Updates 'offset_map_entry' with the given 'candidate_offset' if the patch corresponding to 'candidate_rect' on
      * 'source_img' is a better match than for the given 'patch'.
      */
-    void updateOffsetMapEntryIfBetter(cv::Mat &patch, cv::Point &candidate_offset,
-                                      cv::Rect &candiadate_rect, cv::Mat &source_img, cv::Vec3f *offset_map_entry) const;
+    void updateOffsetMapEntryIfBetter(const cv::Mat &patch, const cv::Point &candidate_offset,
+                                      const cv::Rect &candiadate_rect, const cv::Mat &source_img,
+                                      cv::Vec3f *offset_map_entry) const;
 
 };
 

@@ -46,10 +46,9 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) :
 
     // Initialize target rects.
     _target_area_pyr.resize(_nr_scales + 1);
-    _target_rect_pyr.resize(_nr_scales + 1);
     _offset_map_pyr.resize(_nr_scales + 1);
     for (int i = 0; i < _nr_scales + 1; i ++) {
-        _target_rect_pyr[i] = computeTargetRect(_img_pyr[i], _hole_pyr[i], patch_size);
+        _target_rect_pyr.push_back(computeTargetRect(_img_pyr[i], _hole_pyr[i], patch_size));
     }
 }
 
@@ -176,7 +175,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
     return upscaled_target_area;
 }
 
-Rect HoleFilling::computeTargetRect(Mat &img, Mat &hole, int patch_size) const {
+Rect HoleFilling::computeTargetRect(const Mat &img, const Mat &hole, int patch_size) const {
     vector<Point> non_zero_locations;
     findNonZero(hole, non_zero_locations);
     int min_x = min_element(non_zero_locations.begin(), non_zero_locations.end(), compare_by_x)->x;
