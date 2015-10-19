@@ -13,8 +13,10 @@ using std::vector;
 const bool WEIGHTED_BY_SIMILARITY = false;
 const float SIGMA_SQR = 1;
 
-VotedReconstruction::VotedReconstruction(Mat &offset_map, Mat &source, int patch_size) :
-        _offset_map(offset_map), _source(source), _patch_size(patch_size) { }
+VotedReconstruction::VotedReconstruction(const Mat &offset_map, const Mat &source, const Mat &source_grad_x,
+                                         const Mat &source_grad_y, int patch_size) :
+        _offset_map(offset_map), _source(source), _source_grad_x(source_grad_x), _source_grad_y(source_grad_y),
+        _patch_size(patch_size) { }
 
 Mat VotedReconstruction::reconstruct() const {
     Mat reconstructed = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);

@@ -19,6 +19,9 @@ public:
      */
     int findNumberScales(const cv::Mat &source, const cv::Mat &target, int patch_size) const;
 
+    const cv::Mat getSourceGradientX() const { return _source_grad_x_pyr[0]; };
+    const cv::Mat getSourceGradientY() const { return _source_grad_y_pyr[0]; };
+
 private:
     std::vector<cv::Mat> _source_pyr, _target_pyr, _offset_map_pyr;
 

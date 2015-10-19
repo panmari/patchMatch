@@ -88,7 +88,8 @@ Mat HoleFilling::run() {
                 // cvtColor(source, img_bgr, CV_Lab2BGR);
                 //pmutil::dumpNearestPatches(_offset_map_pyr[scale], img_bgr, _patch_size, modifier);
             }
-            VotedReconstruction vr(_offset_map_pyr[scale], source, _patch_size);
+            VotedReconstruction vr(_offset_map_pyr[scale], source, rmp.getSourceGradientX(), rmp.getSourceGradientY(),
+                                   _patch_size);
             Mat reconstructed = vr.reconstruct();
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
             Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
