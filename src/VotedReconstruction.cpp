@@ -20,7 +20,7 @@ VotedReconstruction::VotedReconstruction(const Mat &offset_map, const Mat &sourc
         _patch_size(patch_size) { }
 
 void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
-    Size reconstructed_size(_offset_map.rows + _patch_size - 1, _offset_map.cols + _patch_size - 1);
+    Size reconstructed_size(_offset_map.cols + _patch_size - 1, _offset_map.rows + _patch_size - 1);
     Mat reconstructed = Mat::zeros(reconstructed_size, CV_32FC3);
     Mat reconstructed_x_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
     Mat reconstructed_y_gradient = Mat::zeros(reconstructed_size, CV_32FC3);

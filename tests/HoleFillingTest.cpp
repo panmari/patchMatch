@@ -16,7 +16,7 @@ using cv::Size;
 using cv::Vec3f;
 using pmutil::convert_for_computation;
 
-TEST(hole_filling_test, square_hole_on_random_image_should_produce_correct_target_rect)
+TEST(hole_filling_test, one_pixel_hole_on_random_image_should_produce_correct_target_rect)
 {
     // Make some random image data.
     Mat img = Mat(100, 100, CV_32FC1);
@@ -25,11 +25,12 @@ TEST(hole_filling_test, square_hole_on_random_image_should_produce_correct_targe
     // Put a hole in middle.
     Mat hole = Mat::zeros(100, 100, CV_8U);
 
-    hole(Rect(50, 50, 10, 10)) = 1;
+    // Set one pixel as hole
+    hole(Rect(50, 50, 1, 1)) = 1;
     int patch_size = 7;
     HoleFilling hf(img, hole, patch_size);
 
-    Rect expected_target_rect(Point(50 - 6, 50 - 6), Point(60 + 6, 60 + 6));
+    Rect expected_target_rect(Point(50 - 6, 50 - 6), Point(50 + 7, 50 + 7));
 
     ASSERT_EQ(expected_target_rect, hf._target_rect_pyr[0]);
 }
