@@ -41,9 +41,8 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
         computeGradientX(scaled_source, gx);
         _source_grad_x_pyr.push_back(gx);
         Mat gy;
-        computeGradientX(scaled_source, gy);
+        computeGradientY(scaled_source, gy);
         _source_grad_y_pyr.push_back(gy);
-
     }
     for (Mat scaled_target: _target_pyr) {
         Mat lap;
@@ -51,7 +50,7 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
         computeGradientX(scaled_target, gx);
         _target_grad_x_pyr.push_back(gx);
         Mat gy;
-        computeGradientX(scaled_target, gy);
+        computeGradientY(scaled_target, gy);
         _target_grad_y_pyr.push_back(gy);
     }
     _offset_map_pyr.resize(_nr_scales + 1);
