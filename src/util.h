@@ -66,7 +66,7 @@ namespace pmutil {
      * a*: [-170, 100]
      * b*: [-100, 150]
      */
-    static void convert_for_computation(Mat &img, float resize_factor) {
+    static void convert_for_computation(Mat &img, const float resize_factor) {
         if (resize_factor != 1.f) {
             resize(img, img, Size(), resize_factor, resize_factor);
         }
@@ -77,7 +77,7 @@ namespace pmutil {
     /**
      * Writes the given img to a file with the given filename, converting it first from lab to bgr
      */
-    static void imwrite_lab( String filename, Mat &img) {
+    static void imwrite_lab(const String filename, const Mat &img) {
         Mat bgr;
         cvtColor(img, bgr, CV_Lab2BGR);
         imwrite(filename, bgr);
