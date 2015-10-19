@@ -2,8 +2,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "../util.h"
 #include <iostream>
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 using cv::addWeighted;
 using cv::buildPyramid;
@@ -204,8 +202,8 @@ void RandomizedPatchMatch::dumpOffsetMapToFile(Mat &offset_map, String filename_
             float y_offset = offset_map_entry[1];
             float angle = atan2(x_offset, y_offset);
             if (angle < 0)
-                angle += M_PI * 2;
-            angles.at<float>(y, x) = angle / (M_PI * 2) * 360;
+                angle += CV_2PI;
+            angles.at<float>(y, x) = angle / CV_2PI * 360;
             magnitudes.at<float>(y, x) = sqrt(x_offset*x_offset + y_offset*y_offset);
         }
     }
