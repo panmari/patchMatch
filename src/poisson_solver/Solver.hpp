@@ -120,7 +120,6 @@ private:
 
 private:
 	void                    log(const std::string& message);
-	void                    log(const char* fmt, ...);
 
 private:
                             Solver          (const Solver&); // forbidden

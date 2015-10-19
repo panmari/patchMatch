@@ -720,7 +720,7 @@ void BackendCUDA::tonemapLinear(Vector* out, Vector* in, int idx, float scaleMin
 Backend::Timer* BackendCUDA::allocTimer(void)
 {
     TimerCUDA* timerCUDA = new TimerCUDA;
-    timerCUDA->beginTicks = 0;
+    timerCUDA->beginTicks = std::chrono::high_resolution_clock::now();
     timerCUDA->beginEvent = NULL;
     timerCUDA->endEvent = NULL;
 

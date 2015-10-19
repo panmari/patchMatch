@@ -27,10 +27,9 @@
 #include "Solver.hpp"
 #include "BackendCUDA.hpp"
 #include "BackendOpenMP.hpp"
-#include "ImagePfmIO.hpp"
-#include "lodepng.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 using namespace poisson;
 
@@ -69,7 +68,7 @@ void Solver::Params::setDefaults(void)
     backend         = "Auto";
     cudaDevice      = -1;
 
-	logFunc = LogFunction([](const std::string& message) { printf(message.c_str()); });
+	logFunc = LogFunction([](const std::string& message) { printf("%s", message.c_str()); });
 
     setConfigPreset("L1D");
 }
@@ -286,9 +285,9 @@ void Solver::setupBackend(void)
 
     // Otherwise => error.
 
-    if (!m_backend)
-        fail("Invalid backend specified '%s'!", m_params.backend);
-
+    if (!m_backend) {
+        fail("Invalid backend specified '%s'!", m_params.backend.c_str());
+    }
     // Allocate backend objects.
 
     int n           = m_size.x * m_size.y;
@@ -592,40 +591,6 @@ void Solver::exportImages(void)
 
 //------------------------------------------------------------------------
 
-void Solver::importImage(Vec3f** pixelPtr, const char* pfmPath)
-{
-    // No file specified => skip.
-
-    if (!pfmPath || !pfmPath[0])
-        return;
-
-    // Import.
-
-    assert(pixelPtr);
-    Vec3f* pixels = NULL;
-    int width = 0;
-    int height = 0;
-
-    if (m_params.verbose)
-        printf("Importing '%s'...\n", pfmPath);
-    const char* error = importPfmImage(&pixels, &width, &height, pfmPath);
-    if (error)
-        fail("Failed to import '%s': %s", pfmPath, error);
-
-    // Set/check dimensions.
-
-    if (m_size.x == -1 && m_size.y == -1)
-        m_size = Vec2i(width, height);
-    else if (width != m_size.x || height != m_size.y)
-        fail("Mismatch in image dimensions for '%s'!", pfmPath);
-
-    // Set pixels.
-
-    *pixelPtr = pixels;
-}
-
-//------------------------------------------------------------------------
-
 void Solver::setImages(const float * const h_ib, const float * const h_dx, const float * const h_dy, const int width, const int height)
 {
     assert(h_ib && h_dx && h_dy && width > 0 && height > 0);
@@ -662,50 +627,6 @@ void Solver::getImage(float *h_dst)
     m_backend->unmap(m_r, (void*)p_r, false);
 }
 
-//------------------------------------------------------------------------
-
-void Solver::exportImage(const Vec3f* pixelPtr, const char* pfmPath, const char* pngPath, bool gradient, Backend::Vector* tmp)
-{
-    assert(m_size.x > 0 && m_size.y > 0);
-    assert(tmp && tmp->numElems == m_size.x * m_size.y && tmp->bytesPerElem == sizeof(Vec3f));
-
-    // Export as PFM.
-
-    if (pixelPtr && pfmPath && pfmPath[0])
-    {
-        if (m_params.verbose)
-            printf("Exporting '%s'...\n", pfmPath);
-        const char* error = exportPfmImage(pfmPath, pixelPtr, m_size.x, m_size.y);
-        if (error)
-            fail("Failed to export '%s': %s", pfmPath, error);
-    }
-
-    // Export as PNG.
-
-    if (pixelPtr && pngPath && pngPath[0])
-    {
-        m_backend->write(tmp, pixelPtr);
-        m_backend->tonemapSRGB(m_tonemapped, tmp, 0, m_params.brightness, (gradient) ? 0.5f : 0.0f);
-        const unsigned int* p_tonemapped = (const unsigned int*)m_backend->map(m_tonemapped);
-
-        if (m_params.verbose)
-            printf("Exporting '%s'...\n", pngPath);
-        if (lodepng_encode32_file(pngPath, (const unsigned char*)p_tonemapped, m_size.x, m_size.y) != 0)
-            fail("Failed to export '%s'!", pngPath);
-
-        m_backend->unmap(m_tonemapped, (void*)p_tonemapped, false);
-    }
-}
-
-//------------------------------------------------------------------------
-
-/*void Solver::display(const char* title)
-{
-    m_debugWindow.setTitle(title);
-    m_debugWindow.setSize(m_size.x, m_size.y);
-    m_backend->read(m_debugWindow.getPixelPtr(), m_tonemapped);
-    m_debugWindow.display();
-}*/
 /*Marco: make this mitsuba friendlier*/
 void Solver::importImagesMTS(float *dx, float *dy, float *tp, int width, int height){
 
@@ -813,24 +734,3 @@ void Solver::log(const std::string& message)
 {
 	m_params.logFunc(message);
 }
-
-//------------------------------------------------------------------------
-
-void Solver::log(const char* fmt, ...)
-{
-	va_list args;
-	va_start(args, fmt);
-	int len = _vscprintf(fmt, args);
-	std::string str;
-	str.resize(len);
-	vsprintf_s((char*)str.c_str(), len + 1, fmt, args);
-	va_end(args);
-
-	log(str);
-}
-
-//------------------------------------------------------------------------
-
-
-//------------------------------------------------------------------------
-

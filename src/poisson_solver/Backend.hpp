@@ -26,6 +26,9 @@
 
 #pragma once
 #include "Defs.hpp"
+#include <chrono>
+
+typedef unsigned long long LARGE_INTEGER;
 
 namespace poisson
 {
@@ -54,7 +57,7 @@ public:
 
     struct Timer
     {
-        __int64         beginTicks;
+        std::chrono::high_resolution_clock::time_point    beginTicks;
     };
 
 public:

@@ -27,25 +27,12 @@
 #include "Backend.hpp"
 #include <malloc.h>
 #include <stdio.h>
+#include <string.h>
 
-#include <windows.h>
 #undef min
 #undef max
 
 using namespace poisson;
-
-//------------------------------------------------------------------------
-
-Backend::Backend(void)
-{
-    LARGE_INTEGER freq;
-    if (!QueryPerformanceFrequency(&freq))
-    {
-        printf("QueryPerformanceFrequency() failed!\n");
-        exit(0);
-    }
-    m_timerTicksToSecs = max(1.0 / (double)freq.QuadPart, 0.0);
-}
 
 //------------------------------------------------------------------------
 
@@ -379,7 +366,7 @@ void Backend::calc_w2(Vector* w2, Vector* e, float reg)
 // Poisson preconditioner from the following paper:
 //
 // A Parallel Preconditioned Conjugate Gradient Solver for the Poisson Problem on a Multi-GPU Platform
-// M. Ament, G. Knittel, D. Weiskopf, W. Straßer
+// M. Ament, G. Knittel, D. Weiskopf, W. Straï¿½er
 // http://www.vis.uni-stuttgart.de/~amentmo/docs/ament-pcgip-PDP-2010.pdf
 //
 // Seems to make a minor difference with L2, but no difference at all with L1.
@@ -512,7 +499,7 @@ void Backend::tonemapLinear(Vector* out, Vector* in, int idx, float scaleMin, fl
 Backend::Timer* Backend::allocTimer(void)
 {
     Timer* timer = new Timer;
-    timer->beginTicks = 0;
+    timer->beginTicks = std::chrono::high_resolution_clock::now();
     return timer;
 }
 
@@ -528,13 +515,7 @@ void Backend::freeTimer(Timer* timer)
 void Backend::beginTimer(Timer* timer)
 {
     assert(timer);
-    LARGE_INTEGER ticks;
-    if (!QueryPerformanceCounter(&ticks))
-    {
-        printf("QueryPerformanceFrequency() failed!\n");
-        exit(0);
-    }
-    timer->beginTicks = ticks.QuadPart;
+    timer->beginTicks = std::chrono::high_resolution_clock::now();
 }
 
 //------------------------------------------------------------------------
@@ -542,13 +523,9 @@ void Backend::beginTimer(Timer* timer)
 float Backend::endTimer(Timer* timer)
 {
     assert(timer);
-    LARGE_INTEGER ticks;
-    if (!QueryPerformanceCounter(&ticks))
-    {
-        printf("QueryPerformanceFrequency() failed!\n");
-        exit(0);
-    }
-    return (float)((double)(ticks.QuadPart - timer->beginTicks) * m_timerTicksToSecs);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>( end - timer->beginTicks).count();
+    return duration / (1e-3f);
 }
 
 //------------------------------------------------------------------------
