@@ -99,20 +99,6 @@ namespace poisson {
         }
     }
 
-    void computeLaplacianX(const Mat &img, Mat &laplacianX) {
-        Mat kernel = Mat::zeros(1, 3, CV_8S);
-        kernel.at<char>(0, 0) = -1;
-        kernel.at<char>(0, 1) = 1;
-        filter2D(img, laplacianX, CV_32F, kernel);
-    }
-
-    void computeLaplacianY(const Mat &img, Mat &laplacianY) {
-        Mat kernel = Mat::zeros(3, 1, CV_8S);
-        kernel.at<char>(0, 0) = -1;
-        kernel.at<char>(1, 0) = 1;
-        filter2D(img, laplacianY, CV_32F, kernel);
-    }
-
     void solve(const Mat &img, Mat &mod_diff, Mat &result) {
         const int w = img.cols;
         const int h = img.rows;
