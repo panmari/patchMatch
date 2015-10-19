@@ -15,6 +15,8 @@ class PoissonSolver {
 public:
 
     PoissonSolver(const Mat &img, const Mat &gradient_x, const Mat &gradient_y) : img(img) {
+        CV_DbgAssert(img.size() == gradient_x.size());
+        CV_DbgAssert(img.size() == gradient_y.size());
         const int w = img.cols;
         filter_X.resize(w - 2);
         for (int i = 0; i < w - 2; ++i)
