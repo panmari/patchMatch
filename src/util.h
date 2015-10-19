@@ -20,7 +20,7 @@ namespace pmutil {
      * Computes the sum of squared differences of the two given matrices/images. Assumes that they have the same size
      * and type. 
      */
-    static double ssd(Mat &img, Mat &img2) {
+    static double ssd(const Mat &img, const Mat &img2) {
         Mat diff = img - img2;
         Mat squares = diff.mul(diff);
         Scalar ssd_channels = sum(squares);
@@ -33,7 +33,7 @@ namespace pmutil {
 	 * Only works for float matrices right now!
 	 * TODO: extend for other types.
 	 */
-    static double ssd_unsafe(Mat &img, Mat &img2, double limit = INFINITY) {
+    static double ssd_unsafe(const Mat &img, const Mat &img2, double limit = INFINITY) {
 		double ssd = 0.f;
 		int nRows = img.rows;
 		int nCols = img.cols * img.channels();
@@ -44,8 +44,8 @@ namespace pmutil {
 			nRows = 1;
 		}
 		for (int i = 0; i < nRows; i++) {
-			float *p1 = img.ptr<float>(i);
-			float *p2 = img2.ptr<float>(i);
+			const float *p1 = img.ptr<const float>(i);
+			const float *p2 = img2.ptr<const float>(i);
 			for (int j = 0; j < nCols; j++)
 			{
 				float diff = p1[j] - p2[j];
