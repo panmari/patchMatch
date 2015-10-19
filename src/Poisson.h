@@ -14,6 +14,7 @@ namespace poisson {
     using cv::Scalar;
 
     namespace {
+        // Somehow computes dft of something between src & dst.
         void dst(const Mat &src, Mat &dest, bool invert = false) {
             Mat temp = Mat::zeros(src.rows, 2 * src.cols + 2, CV_32F);
 
@@ -25,6 +26,8 @@ namespace poisson {
                 float *tempLinePtr = temp.ptr<float>(j);
                 const float *srcLinePtr = src.ptr<float>(j);
                 for (int i = 0; i < src.cols; ++i) {
+                    // how does src.cols + 2 + i make sense?
+                    // We'll be on the next row most probably, so temp should be continuous.
                     tempLinePtr[src.cols + 2 + i] = -srcLinePtr[src.cols - 1 - i];
                 }
             }
@@ -176,14 +179,18 @@ namespace poisson {
 
         Mat bound = img.clone();
 
+        // Fills out everything but a 1-border on image with black.
         rectangle(bound, Point(1, 1), Point(img.cols - 2, img.rows - 2), Scalar::all(0), -1);
         Mat boundary_points;
+        // Computes laplacian (center will be 0).
         Laplacian(bound, boundary_points, CV_32F);
 
+        // somehow fixes up boundaries?
         boundary_points = lap - boundary_points;
 
         Mat mod_diff = boundary_points(Rect(1, 1, w - 2, h - 2));
 
+        //mod_diff is the laplacian of the image with somewhat fixed boundaries.
         solve(img, mod_diff, result);
     }
 }
