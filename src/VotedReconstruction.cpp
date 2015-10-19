@@ -1,11 +1,11 @@
 #include "VotedReconstruction.h"
+#include "PoissonSolver.h"
 
 using cv::COLOR_GRAY2BGR;
 using cv::divide;
 using cv::Mat;
 using cv::Rect;
 using cv::Vec3f;
-using std::vector;
 
 /**
  * Patches with higher similarity have higher weights in reconstruction. If false, ever patch has the same weight (1).
@@ -18,8 +18,8 @@ VotedReconstruction::VotedReconstruction(const Mat &offset_map, const Mat &sourc
         _offset_map(offset_map), _source(source), _source_grad_x(source_grad_x), _source_grad_y(source_grad_y),
         _patch_size(patch_size) { }
 
-void VotedReconstruction::reconstruct(Mat &reconstructed) const {
-    reconstructed = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
+void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
+    Mat reconstructed = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
     Mat reconstructed_x_gradient = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
     Mat reconstructed_y_gradient = Mat::zeros(_offset_map.rows + _patch_size, _offset_map.cols + _patch_size, CV_32FC3);
 
@@ -62,4 +62,6 @@ void VotedReconstruction::reconstruct(Mat &reconstructed) const {
     divide(reconstructed, weights3d, reconstructed);
     divide(reconstructed_x_gradient, weights3d, reconstructed_x_gradient);
     divide(reconstructed_y_gradient, weights3d, reconstructed_y_gradient);
+    PoissonSolver ps(reconstructed, reconstructed_x_gradient, reconstructed_y_gradient);
+    ps.solve(reconstructed_solved);
 }

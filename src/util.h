@@ -130,27 +130,6 @@ namespace pmutil {
             merge(tmp, 3, gy);
         }
     }
-
-    static void computeLaplacianX(const Mat &img, Mat &laplacianX) {
-        Mat kernel = Mat::zeros(1, 3, CV_8S);
-        kernel.at<char>(0, 0) = -1;
-        kernel.at<char>(0, 1) = 1;
-        filter2D(img, laplacianX, CV_32F, kernel);
-    }
-
-    static void computeLaplacianY(const Mat &img, Mat &laplacianY) {
-        Mat kernel = Mat::zeros(3, 1, CV_8S);
-        kernel.at<char>(0, 0) = -1;
-        kernel.at<char>(1, 0) = 1;
-        filter2D(img, laplacianY, CV_32F, kernel);
-    }
-
-    static void computeLaplacian(const Mat &img, Mat &laplacian) {
-        computeLaplacianX(img, laplacian);
-        Mat lap_y;
-        computeLaplacianY(img, lap_y);
-        laplacian += lap_y;
-    }
 }
 
 #endif //PATCHMATCH_UTIL_H
