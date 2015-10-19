@@ -31,7 +31,6 @@ public:
     void solve(Mat &result) {
         const int w = img.cols;
         const int h = img.rows;
-        result.create(w, h, CV_32FC3);
 
         Mat bound = img.clone();
 
@@ -53,9 +52,11 @@ public:
         std::vector<Mat> mod_diff_chans;
         cv::split(mod_diff, mod_diff_chans);
         std::vector<Mat> result_chans;
-        cv::split(result, result_chans);
         for(int c = 0; c < 3; c++) {
-            solve(img_chans[c], mod_diff_chans[c], result_chans[c]);
+            Mat single_chan;
+            single_chan.create(img.rows, img.cols, CV_32FC1);
+            solve(img_chans[c], mod_diff_chans[c], single_chan);
+            result_chans.push_back(single_chan);
         }
         cv::merge(result_chans, result);
     }
@@ -131,17 +132,17 @@ private:
 
         idst(res, mod_diff);
 
-        uchar *resLinePtr = result.ptr<uchar>(0);
-        const uchar *imgLinePtr = img.ptr<uchar>(0);
+        float *resLinePtr = result.ptr<float>(0);
+        const float *imgLinePtr = img.ptr<float>(0);
         const float *interpLinePtr = NULL;
 
         //first col
         for (int i = 0; i < w; ++i)
-            result.ptr<uchar>(0)[i] = img.ptr<uchar>(0)[i];
+            result.ptr<float>(0)[i] = img.ptr<float>(0)[i];
 
         for (int j = 1; j < h - 1; ++j) {
-            resLinePtr = result.ptr<uchar>(j);
-            imgLinePtr = img.ptr<uchar>(j);
+            resLinePtr = result.ptr<float>(j);
+            imgLinePtr = img.ptr<float>(j);
             interpLinePtr = mod_diff.ptr<float>(j - 1);
 
             //first row
@@ -151,12 +152,7 @@ private:
                 //saturate cast is not used here, because it behaves differently from the previous implementation
                 //most notable, saturate_cast rounds before truncating, here it's the opposite.
                 float value = interpLinePtr[i - 1];
-                if (value < 0.)
-                    resLinePtr[i] = 0;
-                else if (value > 255.0)
-                    resLinePtr[i] = 255;
-                else
-                    resLinePtr[i] = static_cast<uchar>(value);
+                resLinePtr[i] = value;
             }
 
             //last row
@@ -164,8 +160,8 @@ private:
         }
 
         //last col
-        resLinePtr = result.ptr<uchar>(h - 1);
-        imgLinePtr = img.ptr<uchar>(h - 1);
+        resLinePtr = result.ptr<float>(h - 1);
+        imgLinePtr = img.ptr<float>(h - 1);
         for (int i = 0; i < w; ++i)
             resLinePtr[i] = imgLinePtr[i];
     }
