@@ -93,7 +93,7 @@ TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
 	pmutil::convert_for_computation(source, resize_factor);
 	pmutil::convert_for_computation(target, resize_factor);
 	const int patch_size = 7;
-	RandomizedPatchMatch rpm(source, target, patch_size);
+	RandomizedPatchMatch rpm(source, target, patch_size, 0);
 	Mat diff_rpm = rpm.match();
 
 	ExhaustivePatchMatch epm(source, target, patch_size);

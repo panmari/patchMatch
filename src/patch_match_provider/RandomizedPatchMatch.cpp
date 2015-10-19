@@ -18,6 +18,8 @@ using cv::RNG;
 using cv::Vec3f;
 using std::max;
 using pmutil::ssd_unsafe;
+using pmutil::computeGradientX;
+using pmutil::computeGradientY;
 
 /**
  * Number times propagation/random_search is executed for every patch per iteration.
@@ -30,13 +32,29 @@ const bool RANDOM_SEARCH = true;
 const bool MERGE_UPSAMPLED_OFFSETS = true;
 const float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
-RandomizedPatchMatch::RandomizedPatchMatch(cv::Mat &source, cv::Mat &target, int patch_size) :
+RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda) :
         _patch_size(patch_size), _max_search_radius(max(target.cols, target.rows)),
-        _nr_scales(findNumberScales(source, target, patch_size)) {
+        _nr_scales(findNumberScales(source, target, patch_size)), _lambda(lambda) {
     buildPyramid(source, _source_pyr, _nr_scales);
     buildPyramid(target, _target_pyr, _nr_scales);
     for (Mat scaled_source: _source_pyr) {
         _source_rect_pyr.push_back(Rect(Point(0,0), scaled_source.size()));
+        Mat gx;
+        computeGradientX(scaled_source, gx);
+        _source_grad_x_pyr.push_back(gx);
+        Mat gy;
+        computeGradientX(scaled_source, gy);
+        _source_grad_y_pyr.push_back(gy);
+
+    }
+    for (Mat scaled_target: _target_pyr) {
+        Mat lap;
+        Mat gx;
+        computeGradientX(scaled_target, gx);
+        _target_grad_x_pyr.push_back(gx);
+        Mat gy;
+        computeGradientX(scaled_target, gy);
+        _target_grad_y_pyr.push_back(gy);
     }
     _offset_map_pyr.resize(_nr_scales + 1);
 }
@@ -206,15 +224,24 @@ void RandomizedPatchMatch::dumpOffsetMapToFile(Mat &offset_map, String filename_
     imwrite("min_dist_img_normalized" + filename_modifier + ".exr", normed);
 }
 
-int RandomizedPatchMatch::findNumberScales(Mat &source, Mat &target, int patch_size) const {
+int RandomizedPatchMatch::findNumberScales(const Mat &source, const Mat &target, int patch_size) const {
     int min_dimension = std::min(std::min(std::min(source.cols, source.rows), target.cols), target.rows);
     return (int) log2( min_dimension/ (2.f * patch_size));
 }
-
 
 float RandomizedPatchMatch::patchDistance(const cv::Rect &source_rect, const cv::Rect &target_rect, const int scale,
                                           const float previous_dist) const {
     Mat source_patch = _source_pyr[scale](source_rect);
     Mat target_patch = _target_pyr[scale](target_rect);
-    return static_cast<float>(ssd_unsafe(source_patch, target_patch, previous_dist));
+    double ssd_img = ssd_unsafe(source_patch, target_patch, previous_dist);
+
+    Mat source_grad_x_patch = _source_grad_x_pyr[scale](source_rect);
+    Mat target_grad_x_patch = _target_grad_x_pyr[scale](target_rect);
+    double ssd_grad_x = ssd_unsafe(source_grad_x_patch, target_grad_x_patch);
+
+    Mat source_grad_y_patch = _source_grad_y_pyr[scale](source_rect);
+    Mat target_grad_y_patch = _target_grad_y_pyr[scale](target_rect);
+    double ssd_grad_y = ssd_unsafe(source_grad_y_patch, target_grad_y_patch);
+
+    return static_cast<float>(ssd_img + _lambda * (ssd_grad_x + ssd_grad_y));
 }

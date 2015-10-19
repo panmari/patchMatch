@@ -97,6 +97,40 @@ namespace pmutil {
         }
     }
 
+    static void computeGradientX(const Mat &img, Mat &gx) {
+        Mat kernel = Mat::zeros(1, 3, CV_8S);
+        kernel.at<char>(0, 2) = 1;
+        kernel.at<char>(0, 1) = -1;
+
+        if (img.channels() == 3) {
+            filter2D(img, gx, CV_32F, kernel);
+        }
+        else if (img.channels() == 1) {
+            Mat tmp[3];
+            for (int chan = 0; chan < 3; ++chan) {
+                filter2D(img, tmp[chan], CV_32F, kernel);
+            }
+            merge(tmp, 3, gx);
+        }
+    }
+
+    static void computeGradientY(const Mat &img, Mat &gy) {
+        Mat kernel = Mat::zeros(3, 1, CV_8S);
+        kernel.at<char>(2, 0) = 1;
+        kernel.at<char>(1, 0) = -1;
+
+        if (img.channels() == 3) {
+            filter2D(img, gy, CV_32F, kernel);
+        }
+        else if (img.channels() == 1) {
+            Mat tmp[3];
+            for (int chan = 0; chan < 3; ++chan) {
+                filter2D(img, tmp[chan], CV_32F, kernel);
+            }
+            merge(tmp, 3, gy);
+        }
+    }
+
     static void computeLaplacianX(const Mat &img, Mat &laplacianX) {
         Mat kernel = Mat::zeros(1, 3, CV_8S);
         kernel.at<char>(0, 0) = -1;
@@ -109,6 +143,13 @@ namespace pmutil {
         kernel.at<char>(0, 0) = -1;
         kernel.at<char>(1, 0) = 1;
         filter2D(img, laplacianY, CV_32F, kernel);
+    }
+
+    static void computeLaplacian(const Mat &img, Mat &laplacian) {
+        computeLaplacianX(img, laplacian);
+        Mat lap_y;
+        computeLaplacianY(img, lap_y);
+        laplacian += lap_y;
     }
 }
 

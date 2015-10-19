@@ -11,20 +11,30 @@
 class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
-    RandomizedPatchMatch(cv::Mat &source, cv::Mat &target, int patch_size);
+    RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda = 0.5f);
     cv::Mat match();
 
     /* Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
      * their minimal dimension.
      */
-    int findNumberScales(cv::Mat &source, cv::Mat &target, int patch_size) const;
+    int findNumberScales(const cv::Mat &source, const cv::Mat &target, int patch_size) const;
 
 private:
     std::vector<cv::Mat> _source_pyr, _target_pyr, _offset_map_pyr;
+
+    /**
+     * Gradients
+     */
+    std::vector<cv::Mat> _source_grad_x_pyr, _source_grad_y_pyr, _target_grad_x_pyr, _target_grad_y_pyr;
     std::vector<cv::Rect> _source_rect_pyr;
     const int _patch_size, _max_search_radius;
     // Minimum size image in pyramid is 2x patchSize of lower dimension (or larger).
     const int _nr_scales;
+
+    /**
+     * Weight of gradient in distance measure, should be in [0, 1]. Default is 0.5.
+     */
+    const float _lambda;
 
     /* Mainly for debugging, dumps offset map to file. */
     void dumpOffsetMapToFile(cv::Mat &offset_map, cv::String filename_modifier) const;
