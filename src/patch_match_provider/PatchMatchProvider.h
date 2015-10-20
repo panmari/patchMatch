@@ -5,6 +5,8 @@
 #ifndef PATCHMATCH_PATCHMATCHPROVIDER_H
 #define PATCHMATCH_PATCHMATCHPROVIDER_H
 
+#include "opencv2/imgproc/imgproc.hpp"
+
 using cv::Mat;
 
 class PatchMatchProvider {

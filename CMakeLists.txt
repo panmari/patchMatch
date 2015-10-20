@@ -11,7 +11,16 @@ find_package(OpenCV REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-file(GLOB_RECURSE patch_match_source src/*(.cpp|.h))
+
+file(GLOB patch_match_source src/*(.cpp|.h) src/patch_match_provider/*)
+if(OpenCV_CUDA_VERSION)
+    file(GLOB additional_patch_match_source src/patch_match_provider/gpu/*)
+else()
+    file(GLOB additional_patch_match_source src/patch_match_provider/cpu/*)
+endif()
+LIST(APPEND patch_match_source ${additional_patch_match_source})
+
+
 add_library(patch_match_lib ${patch_match_source})
 target_link_libraries(patch_match_lib ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
