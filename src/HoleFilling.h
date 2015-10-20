@@ -2,6 +2,7 @@
 #define PATCHMATCH_HOLEFILLING_H
 
 #include "opencv2/imgproc/imgproc.hpp"
+#include "OffsetMap.h"
 
 class HoleFilling {
 
@@ -20,7 +21,8 @@ public:
     cv::Mat run();
     cv::Mat solutionFor(int scale) const;
 
-    std::vector<cv::Mat> _img_pyr, _hole_pyr, _target_area_pyr, _offset_map_pyr;
+    std::vector<cv::Mat> _img_pyr, _hole_pyr, _target_area_pyr;
+    std::vector<OffsetMap> _offset_map_pyr;
     std::vector<cv::Rect> _target_rect_pyr;
     int _nr_scales;
 private:

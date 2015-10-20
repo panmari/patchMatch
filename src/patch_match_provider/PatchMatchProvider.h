@@ -5,12 +5,11 @@
 #ifndef PATCHMATCH_PATCHMATCHPROVIDER_H
 #define PATCHMATCH_PATCHMATCHPROVIDER_H
 
-#include "opencv2/imgproc/imgproc.hpp"
 
-using cv::Mat;
+#include "../OffsetMap.h"
 
 class PatchMatchProvider {
 public:
-    virtual Mat match() = 0;
+    virtual OffsetMap match() = 0;
 };
 #endif //PATCHMATCH_PATCHMATCHPROVIDER_H

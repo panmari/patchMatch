@@ -7,12 +7,13 @@
 
 #include "opencv2/imgproc/imgproc.hpp"
 #include "PatchMatchProvider.h"
+#include "../OffsetMap.h"
 
 class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
     RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda = 0.5f);
-    cv::Mat match();
+    OffsetMap match() override;
 
     /* Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
      * their minimal dimension.
@@ -23,7 +24,8 @@ public:
     const cv::Mat getSourceGradientY() const { return _source_grad_y_pyr[0]; };
 
 private:
-    std::vector<cv::Mat> _source_pyr, _target_pyr, _offset_map_pyr;
+    std::vector<cv::Mat> _source_pyr, _target_pyr;
+    std::vector<OffsetMap> _offset_map_pyr;
 
     /**
      * Gradients
@@ -47,7 +49,7 @@ private:
      * Also the corresponding SSD is computed.
      */
     void initializeWithRandomOffsets(const cv::Mat &target_img, const cv::Mat &source_img, const int scale,
-                                     cv::Mat &offset_map) const;
+                                     OffsetMap &offset_map) const;
 
     /**
      * Updates 'offset_map_entry' with the given 'candidate_offset' if the patch corresponding to 'candidate_rect' on
@@ -55,7 +57,7 @@ private:
      */
     void updateOffsetMapEntryIfBetter(const cv::Rect &target_rect, const cv::Point &candidate_offset,
                                       const cv::Rect &candiadate_rect, const int scale,
-                                      cv::Vec3f *offset_map_entry) const;
+                                      OffsetMapEntry *offset_map_entry) const;
     float patchDistance(const cv::Rect &source_rect, const cv::Rect &target_rect, const int scale,
                         const float previous_dist = INFINITY) const;
 };

@@ -14,26 +14,25 @@ using cv::Vec3f;
 const bool WEIGHTED_BY_SIMILARITY = false;
 const float SIGMA_SQR = 1;
 
-VotedReconstruction::VotedReconstruction(const Mat &offset_map, const Mat &source, const Mat &source_grad_x,
+VotedReconstruction::VotedReconstruction(const OffsetMap &offset_map, const Mat &source, const Mat &source_grad_x,
                                          const Mat &source_grad_y, int patch_size) :
         _offset_map(offset_map), _source(source), _source_grad_x(source_grad_x), _source_grad_y(source_grad_y),
         _patch_size(patch_size) { }
 
 void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
-    Size reconstructed_size(_offset_map.cols + _patch_size - 1, _offset_map.rows + _patch_size - 1);
+    Size reconstructed_size(_offset_map._width + _patch_size - 1, _offset_map._height + _patch_size - 1);
     Mat reconstructed = Mat::zeros(reconstructed_size, CV_32FC3);
     Mat reconstructed_x_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
     Mat reconstructed_y_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
 
     Mat count = Mat::zeros(reconstructed.size(), CV_32FC1);
-    for (int x = 0; x < _offset_map.cols; x++) {
-        for (int y = 0; y < _offset_map.rows; y++) {
+    for (int x = 0; x < _offset_map._width; x++) {
+        for (int y = 0; y < _offset_map._height; y++) {
             // Go over all patches that contain this image.
-            Vec3f offset_map_entry = _offset_map.at<Vec3f>(y, x);
-            int match_x = x + offset_map_entry[0];
-            int match_y = y + offset_map_entry[1];
+            const OffsetMapEntry offset_map_entry = _offset_map.at(y, x);
+            const Point offset = offset_map_entry.offset;
             // Get image data of matching patch
-            Rect matching_patch_rect(match_x, match_y, _patch_size, _patch_size);
+            Rect matching_patch_rect(x + offset.x, y + offset.y, _patch_size, _patch_size);
             Mat matching_patch = _source(matching_patch_rect);
             Mat matching_patch_grad_x = _source_grad_x(matching_patch_rect);
             Mat matching_patch_grad_y = _source_grad_y(matching_patch_rect);
@@ -41,7 +40,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
             float weight;
             if (WEIGHTED_BY_SIMILARITY) {
                 // Apply square root to get L2 distance (kind of), then divide by patchsize.
-                float normalized_dist = sqrt(offset_map_entry[2]) / (_patch_size  * _patch_size);
+                float normalized_dist = sqrt(offset_map_entry.distance) / (_patch_size  * _patch_size);
                 weight = exp(-normalized_dist / 2 * SIGMA_SQR);
             }
             else {
