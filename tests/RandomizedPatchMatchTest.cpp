@@ -1,7 +1,7 @@
 #include "opencv2/ts.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "../src/patch_match_provider/ExhaustivePatchMatch.h"
+#include "../src/patch_match_provider/gpu/ExhaustivePatchMatch.h"
 #include "../src/patch_match_provider/RandomizedPatchMatch.h"
 #include "../src/util.h"
 
