@@ -1,6 +1,6 @@
 #include "opencv2/ts.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "../src/patch_match_provider/ExhaustivePatchMatch.h"
+#include "../src/patch_match_provider/gpu/ExhaustivePatchMatch.h"
 #include "opencv2/highgui/highgui.hpp"
 
 using cv::Mat;

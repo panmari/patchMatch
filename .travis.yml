@@ -13,14 +13,15 @@ addons:
 before_script:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
   - git clone https://github.com/Itseez/opencv.git
+  - mkdir -p opencv_build
   - cd opencv_build
-  - cmake ../opencv
+  - cmake  -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -D BUILD_JAVA=OFF ../opencv
   - make -j8
   - cd ..
 script:
   - cmake -D OpenCV_DIR=opencv_build/ .
   - make
-  - runUnitTests
+  - ./runUnitTests
 cache:
   apt: true
   directories:
