@@ -1,7 +1,11 @@
 #include "opencv2/ts.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#ifdef OpenCV_CUDA_VERSION
 #include "../src/patch_match_provider/gpu/ExhaustivePatchMatch.h"
+#else
+#include "../src/patch_match_provider/cpu/ExhaustivePatchMatch.h"
+#endif
 #include "../src/patch_match_provider/RandomizedPatchMatch.h"
 #include "../src/util.h"
 

@@ -1,13 +1,18 @@
 #include "opencv2/ts.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "../src/patch_match_provider/gpu/ExhaustivePatchMatch.h"
 #include "opencv2/highgui/highgui.hpp"
+#ifdef OpenCV_CUDA_VERSION
+#include "../src/patch_match_provider/gpu/ExhaustivePatchMatch.h"
+#else
+#include "../src/patch_match_provider/cpu/ExhaustivePatchMatch.h"
+#endif
 
 using cv::Mat;
 using cv::Scalar;
 using cv::Vec3f;
 
-const double EPSILON = 1e-6;
+const double EPSILON = 1e-4;
+
 TEST(exhaustive_patch_match_test, on_two_identical_trivial_images)
 {
 	Mat img1 = Mat::ones(20, 20, CV_32FC1);
@@ -70,8 +75,9 @@ TEST(exhaustive_patch_match_test, on_two_equal_random_images_offsets_should_be_z
 	ExhaustivePatchMatch epm(img1, img2, 7);
 	Mat diff = epm.match();
 	Scalar diff_sums = sum(diff);
-	double overall_ssd = diff_sums[2];
-	ASSERT_NEAR(0, overall_ssd, EPSILON);
+	const double overall_ssd = diff_sums[2];
+	const double expected_ssd = 0;
+	ASSERT_NEAR(expected_ssd, overall_ssd, EPSILON);
 
 	// All offsets should be (0, 0).
 	for (int x = 0; x < diff.cols; x++) {

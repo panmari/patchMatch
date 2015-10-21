@@ -13,7 +13,7 @@ using cv::Vec3f;
 ExhaustivePatchMatch::ExhaustivePatchMatch(const Mat &source, const Mat &target, const int patch_size,
                                            const bool show_progress_bar) : _source(source), _target(target),
         _patch_size(patch_size), _show_progress_bar(show_progress_bar) {
-    _temp.create(source.size(), CV_32FC1);
+    _temp.create(source.rows - _patch_size + 1, source.cols - _patch_size + 1, CV_32FC1);
 }
 
 Mat ExhaustivePatchMatch::match() {
