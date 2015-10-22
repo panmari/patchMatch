@@ -66,7 +66,7 @@ OffsetMap* RandomizedPatchMatch::match() {
         const int height = target.rows - _patch_size + 1;
         OffsetMap *offset_map = new OffsetMap(width, height);
         initializeWithRandomOffsets(source, target, scale, offset_map);
-        bool isFlipped = false;
+
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
             // After half the iterations, merge the lower resolution offset where they're better.
             // This has to be done in an 'even' iteration because of the flipping.
@@ -92,7 +92,7 @@ OffsetMap* RandomizedPatchMatch::match() {
 
                     // If image is flipped, we need to get x and y coordinates unflipped for getting the right offset.
                     int x_unflipped, y_unflipped;
-                    if (isFlipped) {
+                    if (offset_map->isFlipped()) {
                         x_unflipped = offset_map->_width - 1 - x;
                         y_unflipped = offset_map->_height - 1 - y;
                     } else {
