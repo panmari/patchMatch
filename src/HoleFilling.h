@@ -26,7 +26,6 @@ public:
     std::vector<cv::Rect> _target_rect_pyr;
     int _nr_scales;
 private:
-    cv::Mat _img, _hole;
     const int _patch_size;
     cv::Mat upscaleSolution(int current_scale) const;
     cv::Rect computeTargetRect(const cv::Mat &img, const cv::Mat &hole, int patch_size) const;

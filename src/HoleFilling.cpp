@@ -39,8 +39,7 @@ namespace {
     }
 }
 
-HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) :
-        _img(img), _hole(hole), _patch_size(patch_size),
+HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _patch_size(patch_size),
         _nr_scales(computeNrScales(img, patch_size)) {
     buildPyramid(img, _img_pyr, _nr_scales);
     buildPyramid(hole, _hole_pyr, _nr_scales);
