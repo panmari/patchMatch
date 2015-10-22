@@ -103,7 +103,9 @@ Mat HoleFilling::run() {
             reconstructed.copyTo(_target_area_pyr[scale], write_back_mask);
         }
     }
-    // TODO: Destroy all offset maps.
+    for (OffsetMap *offset_map :_offset_map_pyr) {
+        delete(offset_map);
+    }
     return solutionFor(0);
 }
 
@@ -123,6 +125,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         Mat count = Mat::zeros(upscaled_solution_size, CV_32FC1);
         // This is pretty close to voted reconstruction with some tricky bits added.
         // TODO: Unify this code with voted reconstruction code.
+        // TODO: Make sure, the patch of twice the size does not overlap with hole.
         for (int x = 0; x < previous_offset_map->_width; x++) {
             for (int y = 0; y < previous_offset_map->_height; y++) {
                 // Go over all patches that contain this image.
@@ -148,7 +151,6 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         cvtColor(count, weights3d, cv::COLOR_GRAY2BGR);
         divide(upscaled_target_area, weights3d, upscaled_target_area);
 
-        // TODO: This introduces 1 pixel offset once in a while. Cut out correct target area.
         // Cut out the needed portion of the upscaled target area by
         // projecting top left of previous target area to new scale, compute offset to needed top left.
         Rect prev_target_area_rect = _target_rect_pyr[previous_scale];
