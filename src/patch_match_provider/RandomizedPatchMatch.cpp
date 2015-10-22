@@ -58,7 +58,8 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
 OffsetMap* RandomizedPatchMatch::match() {
     RNG rng( 0xFFFFFFFF );
 
-    OffsetMap *previous_offset_map;
+    // Initialize with dummy offset map that will be deleted at the end of first iteration.
+    OffsetMap *previous_offset_map = new OffsetMap(0, 0);
     for (int scale = _nr_scales; scale >= 0; scale--) {
         Mat source = _source_pyr[scale];
         Mat target = _target_pyr[scale];

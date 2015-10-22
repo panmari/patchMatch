@@ -77,10 +77,12 @@ Mat HoleFilling::run() {
         // TODO: Possibly set some other value here.
         source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
         for (int i = 0; i < EM_STEPS; i++) {
+            if (i > 0) {
+                // Delete previous offset map.
+                delete (_offset_map_pyr[scale]);
+            }
             RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
 
-            // Delete previous offset map.
-            delete _offset_map_pyr[scale];
 
             _offset_map_pyr[scale] = rmp.match();
             if (DUMP_INTERMEDIARY_RESULTS) {
@@ -101,6 +103,7 @@ Mat HoleFilling::run() {
             reconstructed.copyTo(_target_area_pyr[scale], write_back_mask);
         }
     }
+    // TODO: Destroy all offset maps.
     return solutionFor(0);
 }
 
