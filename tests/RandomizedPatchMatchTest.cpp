@@ -86,11 +86,11 @@ TEST(randomized_patch_match_test, images_with_displaced_rectangles_should_produc
     OffsetMap* diff = rpm.match();
     imwrite("offset_map_visualized.exr", diff->toColorCodedImage());
     imwrite("dist_img.exr", diff->getDistanceImage());
-    delete(diff);
 
     double overall_ssd = diff->summedDistance();
     double expected_ssd = 0;
     ASSERT_NEAR(expected_ssd, overall_ssd, EPSILON);
+    delete(diff);
 }
 
 
