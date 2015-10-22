@@ -78,7 +78,11 @@ Mat HoleFilling::run() {
         source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
         for (int i = 0; i < EM_STEPS; i++) {
             RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
-            _offset_map_pyr[scale] = rmp.match();
+
+            // Delete previous offset map.
+            delete _offset_map_pyr[scale];
+
+            rmp.match(_offset_map_pyr[scale]);
             if (DUMP_INTERMEDIARY_RESULTS) {
                 cv::String modifier = str(format("scale_%d_iter_%02d") % scale % i);
                 Mat current_solution = solutionFor(scale);
@@ -105,23 +109,23 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
     if (WEXLER_UPSCALE) {
         // Better method for upscaling, see Wexler2007 Section 3.2
         int previous_scale = current_scale + 1;
-        Mat previous_offset_map = _offset_map_pyr[previous_scale];
+        OffsetMap *previous_offset_map = _offset_map_pyr[previous_scale];
         // Give 1 border, since we are using patches twice the size.
         Mat source;
         copyMakeBorder(_img_pyr[current_scale], source, 0, 1, 0, 1, cv::BORDER_REFLECT);
         // Size is slightly different, since patches have double the size and stride 2.
-        cv::Size upscaled_solution_size((previous_offset_map.cols - 1) * 2 + _patch_size * 2,
-                                        (previous_offset_map.rows - 1) * 2 + _patch_size * 2);
+        cv::Size upscaled_solution_size((previous_offset_map->_width - 1) * 2 + _patch_size * 2,
+                                        (previous_offset_map->_height - 1) * 2 + _patch_size * 2);
         upscaled_target_area = Mat::zeros(upscaled_solution_size, CV_32FC3);
         Mat count = Mat::zeros(upscaled_solution_size, CV_32FC1);
         // This is pretty close to voted reconstruction with some tricky bits added.
         // TODO: Unify this code with voted reconstruction code.
-        for (int x = 0; x < previous_offset_map.cols; x++) {
-            for (int y = 0; y < previous_offset_map.rows; y++) {
+        for (int x = 0; x < previous_offset_map->_width; x++) {
+            for (int y = 0; y < previous_offset_map->_height; y++) {
                 // Go over all patches that contain this image.
-                cv::Vec3f offset_map_entry = previous_offset_map.at<cv::Vec3f>(y, x);
-                int match_x = (x + offset_map_entry[0]) * 2;
-                int match_y = (y + offset_map_entry[1]) * 2;
+                OffsetMapEntry offset_map_entry = previous_offset_map->at(y, x);
+                int match_x = (x + offset_map_entry.offset.x) * 2;
+                int match_y = (y + offset_map_entry.offset.y) * 2;
                 // Get image data of matching patch
                 Rect matching_patch_rect(match_x, match_y, _patch_size * 2, _patch_size * 2);
                 Mat matching_patch = source(matching_patch_rect);

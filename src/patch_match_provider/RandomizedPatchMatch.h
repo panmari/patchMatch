@@ -13,7 +13,7 @@ class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
     RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda = 0.5f);
-    OffsetMap match() override;
+    void match(OffsetMap *offset_map) override;
 
     /* Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
      * their minimal dimension.
@@ -25,7 +25,6 @@ public:
 
 private:
     std::vector<cv::Mat> _source_pyr, _target_pyr;
-    std::vector<OffsetMap> _offset_map_pyr;
 
     /**
      * Gradients
@@ -49,7 +48,7 @@ private:
      * Also the corresponding SSD is computed.
      */
     void initializeWithRandomOffsets(const cv::Mat &target_img, const cv::Mat &source_img, const int scale,
-                                     OffsetMap &offset_map) const;
+                                     OffsetMap *offset_map) const;
 
     /**
      * Updates 'offset_map_entry' with the given 'candidate_offset' if the patch corresponding to 'candidate_rect' on

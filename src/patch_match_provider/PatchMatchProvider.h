@@ -10,6 +10,6 @@
 
 class PatchMatchProvider {
 public:
-    virtual OffsetMap match() = 0;
+    virtual void match(OffsetMap *offset_map) = 0;
 };
 #endif //PATCHMATCH_PATCHMATCHPROVIDER_H

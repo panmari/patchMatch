@@ -16,7 +16,7 @@ ExhaustivePatchMatch::ExhaustivePatchMatch(const Mat &source, const Mat &target,
     _temp.create(source.rows - _patch_size + 1, source.cols - _patch_size + 1, CV_32FC1);
 }
 
-Mat ExhaustivePatchMatch::match() {
+void ExhaustivePatchMatch::match(OffsetMap *offset_map_final) {
     Mat offset_map;
 	offset_map.create(_target.rows - _patch_size, _target.cols - _patch_size, CV_32FC3);
 
@@ -36,7 +36,6 @@ Mat ExhaustivePatchMatch::match() {
         }
         show_progress += offset_map.rows;
     }
-	return offset_map;
 }
 
 void ExhaustivePatchMatch::matchSinglePatch(const Mat &patch, double *minVal, Point *minLoc) const {

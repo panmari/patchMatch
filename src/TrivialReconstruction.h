@@ -2,6 +2,7 @@
 #define PATCHMATCH_TRIVIALRECONSTRUCTION_H
 
 #include "opencv2/imgproc/imgproc.hpp"
+#include "OffsetMap.h"
 
 /**
  * Trivially reconstructs an image by just taking into account only one single pixel of the closest matching patch.
@@ -14,10 +15,11 @@ public:
      * the y-channel being the y-offset.
      * The patch image is assumed to be the one referenced in offset_map.
      */
-    TrivialReconstruction(cv::Mat &offset_map, cv::Mat &source_img, int patch_size);
+    TrivialReconstruction(const OffsetMap *offset_map, const cv::Mat &source_img, const int patch_size);
     cv::Mat reconstruct() const;
 private:
-    cv::Mat _offset_map, _source_img;
+    const OffsetMap *_offset_map;
+    const cv::Mat _source_img;
     int _patch_size;
 };
 

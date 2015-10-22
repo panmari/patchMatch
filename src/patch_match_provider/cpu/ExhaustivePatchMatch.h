@@ -8,7 +8,7 @@ class ExhaustivePatchMatch : public PatchMatchProvider {
 
 public:
 	ExhaustivePatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, bool show_progress_bar = false);
-    cv::Mat match();
+    void match(OffsetMap *offset_map) override;
 
 private:
     bool _show_progress_bar;
