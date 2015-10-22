@@ -37,7 +37,7 @@ TEST(exhaustive_patch_match_test, on_two_very_different_trivial_images)
 	double overall_ssd = diff->summedDistance();
 	delete(diff);
 	// We expect for every patch (size - patch_size)^2 the maximum deviation of 7*7 (every pixel has SSD 1)
-	double expected_ssd = (20 - 7) * (20 - 7) * 7 * 7;
+	double expected_ssd = (20 - 7 + 1) * (20 - 7 + 1) * 7 * 7;
 	ASSERT_NEAR(expected_ssd, overall_ssd, EPSILON);
 }
 

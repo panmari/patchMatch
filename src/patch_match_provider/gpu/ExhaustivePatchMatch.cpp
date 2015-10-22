@@ -10,41 +10,41 @@ using cv::Rect;
 using cv::Scalar;
 using cv::Vec3f;
 
-ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2, int patch_size, bool show_progress_bar) :
+ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &source, Mat &target, int patch_size, bool show_progress_bar) :
         _patch_size(patch_size), _show_progress_bar(show_progress_bar) {
-    _img.upload(img);
-    _img2.upload(img2);
+    _source.upload(source);
+    _target.upload(target);
     _cuda_matcher = createTemplateMatching(CV_32FC3, CV_TM_SQDIFF);
-    _temp.create(_img.rows - _patch_size + 1, _img.cols - _patch_size + 1, CV_32FC1);
+    _temp.create(_source.rows - _patch_size + 1, _source.cols - _patch_size + 1, CV_32FC1);
 }
 
 OffsetMap* ExhaustivePatchMatch::match() {
-    Mat offset_map;
-	offset_map.create(_img.rows - _patch_size, _img.cols - _patch_size, CV_32FC3);
+    OffsetMap* offset_map = new OffsetMap(_target.cols - _patch_size + 1, _target.rows - _patch_size + 1);
 
-	const unsigned long matched_pixels = static_cast<unsigned long>(offset_map.cols * offset_map.rows);
+	const unsigned long matched_pixels = static_cast<unsigned long>(offset_map->_width * offset_map->_height);
 
     boost::iostreams::stream<boost::iostreams::null_sink> nullout { boost::iostreams::null_sink{} };
     std::ostream& out = _show_progress_bar ? std::cout : nullout;
     boost::progress_display show_progress(matched_pixels, out);
 
-	for (int x = 0; x < offset_map.cols; x++) {
-		for (int y = 0; y < offset_map.rows; y++) {
+	for (int x = 0; x < offset_map->_width; x++) {
+		for (int y = 0; y < offset_map->_height; y++) {
 			Rect rect(x, y, _patch_size, _patch_size);
-            GpuMat patch = _img2(rect);
-            double minVal; Point minLoc;
-            matchSinglePatch(patch, &minVal, &minLoc);
-			offset_map.at<Vec3f>(y, x) = Vec3f(minLoc.x - x, minLoc.y - y, static_cast<float>(minVal));
+            GpuMat patch = _target(rect);
+            OffsetMapEntry *entry = offset_map->ptr(y, x);
+            double minVal; Point min_loc;
+            matchSinglePatch(patch, &minVal, &min_loc);
+            entry->distance = static_cast<float>(minVal);
+            entry->offset = Point(min_loc.x - x, min_loc.y - y);
         }
-        show_progress += offset_map.rows;
+        show_progress += offset_map->_width;
     }
-    OffsetMap* om = new OffsetMap(0,0);
-    return om;
+    return offset_map;
 }
 
 void ExhaustivePatchMatch::matchSinglePatch(GpuMat &patch, double *minVal, Point *minLoc) {
     // Do the Matching
-    _cuda_matcher->match(_img, patch, _temp);
+    _cuda_matcher->match(_source, patch, _temp);
     // Localizing the best match with minMaxLoc
     cv::cuda::minMaxLoc(_temp, minVal, nullptr, minLoc, nullptr);
     return;

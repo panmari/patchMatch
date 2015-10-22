@@ -16,7 +16,7 @@ using cv::Scalar;
 using cv::Vec3f;
 using pmutil::convert_for_computation;
 
-const double EPSILON = 1e-6;
+const double EPSILON = 1e-3;
 
 TEST(randomized_patch_match_test, on_two_identical_trivial_images)
 {
@@ -93,7 +93,7 @@ TEST(randomized_patch_match_test, images_with_displaced_rectangles_should_produc
     ASSERT_NEAR(expected_ssd, overall_ssd, EPSILON);
 }
 
-/*
+
 TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
 {
     // TODO: this is not very true anymore, since exhaustive search does not support offsets.
@@ -104,20 +104,19 @@ TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
 	pmutil::convert_for_computation(target, resize_factor);
 	const int patch_size = 7;
 	RandomizedPatchMatch rpm(source, target, patch_size, 0);
-	Mat diff_rpm = rpm.match();
+    OffsetMap* diff_rpm = rpm.match();
 
 	ExhaustivePatchMatch epm(source, target, patch_size);
-	Mat diff_epm = epm.match();
+    OffsetMap* diff_epm = epm.match();
 
 	const int nr_pixels = target.cols * target.rows;
-	Scalar diff_sums_rpm = sum(diff_rpm);
-	double mean_ssd_rpm = diff_sums_rpm[2] / nr_pixels;
+	double mean_ssd_rpm = diff_rpm->summedDistance() / nr_pixels;
 
-	Scalar diff_sums_epm = sum(diff_epm);
-	double mean_ssd_epm = diff_sums_epm[2] / nr_pixels;
+	double mean_ssd_epm = diff_epm->summedDistance() / nr_pixels;
 
 	// This is in L*a*b* space, so the errors are quite high.
 	ASSERT_GT(mean_ssd_rpm, mean_ssd_epm);
 	ASSERT_NEAR(mean_ssd_rpm, mean_ssd_epm, 1000);
+    delete(diff_rpm);
+    delete(diff_epm);
 }
- */

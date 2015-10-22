@@ -9,13 +9,13 @@
 class ExhaustivePatchMatch : public PatchMatchProvider {
 
 public:
-	ExhaustivePatchMatch(cv::Mat &img, cv::Mat &img2, int patch_size, bool show_progress_bar = false);
+	ExhaustivePatchMatch(cv::Mat &source, cv::Mat &target, int patch_size, bool show_progress_bar = false);
     OffsetMap* match();
 
 private:
     bool _show_progress_bar;
 	int _patch_size;
-    cv::cuda::GpuMat _img, _img2, _temp;
+    cv::cuda::GpuMat _source, _target, _temp;
     cv::Ptr<cv::cuda::TemplateMatching> _cuda_matcher;
 
     void matchSinglePatch(cv::cuda::GpuMat &patch, double *minVal, cv::Point *minLoc);

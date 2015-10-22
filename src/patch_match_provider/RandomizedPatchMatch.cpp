@@ -91,6 +91,7 @@ OffsetMap* RandomizedPatchMatch::match() {
                     OffsetMapEntry *offset_map_entry = offset_map->ptr(y, x);
 
                     // If image is flipped, we need to get x and y coordinates unflipped for getting the right offset.
+                    // TODO: Handle the flipping better now that offset_map is a custom class.
                     int x_unflipped, y_unflipped;
                     if (offset_map->isFlipped()) {
                         x_unflipped = offset_map->_width - 1 - x;
