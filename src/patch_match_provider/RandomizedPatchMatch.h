@@ -13,7 +13,7 @@ class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
     RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda = 0.5f);
-    void match(OffsetMap *offset_map) override;
+    OffsetMap* match() override;
 
     /* Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
      * their minimal dimension.

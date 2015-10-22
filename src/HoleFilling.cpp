@@ -82,7 +82,7 @@ Mat HoleFilling::run() {
             // Delete previous offset map.
             delete _offset_map_pyr[scale];
 
-            rmp.match(_offset_map_pyr[scale]);
+            _offset_map_pyr[scale] = rmp.match();
             if (DUMP_INTERMEDIARY_RESULTS) {
                 cv::String modifier = str(format("scale_%d_iter_%02d") % scale % i);
                 Mat current_solution = solutionFor(scale);

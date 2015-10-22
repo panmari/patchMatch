@@ -50,8 +50,7 @@ int main( int argc, char** argv )
 
     RandomizedPatchMatch rpm(source, target, PATCH_SIZE);
 
-    OffsetMap *offset_map;
-    rpm.match(offset_map);
+    OffsetMap *offset_map = rpm.match();
 
     TrivialReconstruction tr(offset_map, source, PATCH_SIZE);
     Mat reconstructed = tr.reconstruct();

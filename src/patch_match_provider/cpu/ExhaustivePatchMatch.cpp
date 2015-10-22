@@ -10,13 +10,13 @@ using cv::Rect;
 using cv::Scalar;
 using cv::Vec3f;
 
-ExhaustivePatchMatch::ExhaustivePatchMatch(const Mat &source, const Mat &target, const int patch_size,
-                                           const bool show_progress_bar) : _source(source), _target(target),
+ExhaustivePatchMatch::ExhaustivePatchMatch(const Mat &source, const Mat &target, int patch_size,
+                                           bool show_progress_bar) : _source(source), _target(target),
         _patch_size(patch_size), _show_progress_bar(show_progress_bar) {
     _temp.create(source.rows - _patch_size + 1, source.cols - _patch_size + 1, CV_32FC1);
 }
 
-void ExhaustivePatchMatch::match(OffsetMap *offset_map_final) {
+OffsetMap* ExhaustivePatchMatch::match() {
     Mat offset_map;
 	offset_map.create(_target.rows - _patch_size, _target.cols - _patch_size, CV_32FC3);
 
@@ -36,6 +36,9 @@ void ExhaustivePatchMatch::match(OffsetMap *offset_map_final) {
         }
         show_progress += offset_map.rows;
     }
+    //TODO: fix this.
+    OffsetMap* om = new OffsetMap(0,0);
+    return om;
 }
 
 void ExhaustivePatchMatch::matchSinglePatch(const Mat &patch, double *minVal, Point *minLoc) const {

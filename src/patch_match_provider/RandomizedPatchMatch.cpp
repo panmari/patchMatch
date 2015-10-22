@@ -55,7 +55,7 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
     }
 }
 
-void RandomizedPatchMatch::match(OffsetMap *final_offset_map) {
+OffsetMap* RandomizedPatchMatch::match() {
     RNG rng( 0xFFFFFFFF );
 
     OffsetMap *previous_offset_map;
@@ -145,7 +145,7 @@ void RandomizedPatchMatch::match(OffsetMap *final_offset_map) {
         delete previous_offset_map;
         previous_offset_map = offset_map;
     }
-    final_offset_map = previous_offset_map;
+    return previous_offset_map;
 }
 
 void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_rect, const Point &candidate_offset,

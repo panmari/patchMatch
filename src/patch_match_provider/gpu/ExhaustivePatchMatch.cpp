@@ -18,7 +18,7 @@ ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &img, Mat &img2, int patch_size, 
     _temp.create(_img.rows - _patch_size + 1, _img.cols - _patch_size + 1, CV_32FC1);
 }
 
-void ExhaustivePatchMatch::match(OffsetMap *offset_map_entry) {
+OffsetMap* ExhaustivePatchMatch::match() {
     Mat offset_map;
 	offset_map.create(_img.rows - _patch_size, _img.cols - _patch_size, CV_32FC3);
 
@@ -38,6 +38,8 @@ void ExhaustivePatchMatch::match(OffsetMap *offset_map_entry) {
         }
         show_progress += offset_map.rows;
     }
+    OffsetMap* om = new OffsetMap(0,0);
+    return om;
 }
 
 void ExhaustivePatchMatch::matchSinglePatch(GpuMat &patch, double *minVal, Point *minLoc) {

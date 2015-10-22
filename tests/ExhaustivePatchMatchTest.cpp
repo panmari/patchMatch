@@ -19,8 +19,7 @@ TEST(exhaustive_patch_match_test, on_two_identical_trivial_images)
 	Mat img2 = Mat::ones(20, 20, CV_32FC1);
 
 	ExhaustivePatchMatch epm(img1, img2, 7);
-	OffsetMap* diff;
-	epm.match(diff);
+	OffsetMap* diff = epm.match();
 	double overall_ssd = diff->summedDistance();
 
 	delete(diff);
@@ -34,8 +33,7 @@ TEST(exhaustive_patch_match_test, on_two_very_different_trivial_images)
 	Mat img2 = Mat::ones(20, 20, CV_32FC1);
 
 	ExhaustivePatchMatch epm(img1, img2, 7);
-	OffsetMap* diff;
-	epm.match(diff);
+	OffsetMap* diff = epm.match();
 	double overall_ssd = diff->summedDistance();
 	delete(diff);
 	// We expect for every patch (size - patch_size)^2 the maximum deviation of 7*7 (every pixel has SSD 1)
@@ -51,8 +49,7 @@ TEST(exhaustive_patch_match_test, all_offsets_inside_image_on_random_images)
 	randu(img2, Scalar::all(0.0), Scalar::all(1.0f));
 
 	ExhaustivePatchMatch epm(img1, img2, 7);
-	OffsetMap* diff;
-	epm.match(diff);
+	OffsetMap* diff = epm.match();
 	for (int x = 0; x < diff->_width; x++) {
 		for (int y = 0; y < diff->_height; y++) {
 			OffsetMapEntry d = diff->at(y, x);
@@ -74,8 +71,7 @@ TEST(exhaustive_patch_match_test, on_two_equal_random_images_offsets_should_be_z
 	Mat img2 = img1.clone();
 
 	ExhaustivePatchMatch epm(img1, img2, 7);
-	OffsetMap* diff;
-	epm.match(diff);
+	OffsetMap* diff = epm.match();
 	double overall_ssd = diff->summedDistance();
 	const double expected_ssd = 0;
 	ASSERT_NEAR(expected_ssd, overall_ssd, EPSILON);

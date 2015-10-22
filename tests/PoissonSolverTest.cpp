@@ -56,7 +56,7 @@ TEST(poisson_solver_test, noisy_synthetic_image_given) {
     ASSERT_LT(gotten_ssd, ssd(img_noisy(crop_rect), img(crop_rect)));
     auto expected_ssd = 0;
     // Error here is quite high.
-    ASSERT_NEAR(gotten_ssd, expected_ssd, 7);
+    ASSERT_NEAR(gotten_ssd, expected_ssd, 0);
 }
 
 TEST(poisson_solver_test, noisy_natural_image_given) {
@@ -84,12 +84,12 @@ TEST(poisson_solver_test, noisy_natural_image_given) {
     imwrite("poisson_original.exr", img);
     imwrite("poisson_solved.exr", result);
 
-    int margin = 5;
+    int margin = 0;
     Rect crop_rect(margin, margin, full_size.width - 2 * margin, full_size.height - 2 * margin);
     auto gotten_ssd = ssd(result(crop_rect), img(crop_rect));
     // Should have at least improved image.
     ASSERT_LT(gotten_ssd, ssd(img_noisy(crop_rect), img(crop_rect)));
     auto expected_ssd = 0;
     // Error here is quite high.
-    ASSERT_NEAR(gotten_ssd, expected_ssd, 4);
+    ASSERT_NEAR(gotten_ssd, expected_ssd, 0);
 }
