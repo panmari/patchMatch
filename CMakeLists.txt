@@ -14,6 +14,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 file(GLOB patch_match_source src/*(.cpp|.h) src/patch_match_provider/*)
 if(OpenCV_CUDA_VERSION)
+    add_definitions(-DOpenCV_CUDA_VERSION=${OpenCV_CUDA_VERSION})
     file(GLOB additional_patch_match_source src/patch_match_provider/gpu/*)
 else()
     file(GLOB additional_patch_match_source src/patch_match_provider/cpu/*)
