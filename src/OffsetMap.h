@@ -31,7 +31,7 @@ public:
 
 private:
     std::vector<OffsetMapEntry> _data;
-    bool _flipped;
+    bool _flipped = false;
 };
 
 #endif //PATCHMATCH_OFFSETMAP_H

@@ -35,9 +35,15 @@ TEST(offset_map_test, flipping_should_work_on_square_image_for_top_left)
     OffsetMapEntry top_left_copy = test.at(0, 0);
     ASSERT_EQ(100, top_left_copy.distance);
 
+    // Check other corner:
+    OffsetMapEntry bottom_right_copy = test.at(99, 99);
+    ASSERT_EQ(0, bottom_right_copy.distance);
+
     // Flip offset map, test again.
     test.flip();
     ASSERT_TRUE(test.isFlipped());
+    ASSERT_EQ(100, test._width);
+    ASSERT_EQ(100, test._height);
 
     OffsetMapEntry *top_left_flipped = test.ptr(0, 0);
     EXPECT_NE(top_left, top_left_flipped);
