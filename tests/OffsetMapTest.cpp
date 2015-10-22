@@ -7,7 +7,6 @@ TEST(offset_map_test, flipping_should_work_on_square_image)
     ASSERT_FALSE(test.isFlipped());
 
     OffsetMapEntry *middle = test.ptr(50, 50);
-    ASSERT_EQ(0, middle->distance);
     middle->distance = 100;
 
     // Check if it was really written there:
@@ -28,16 +27,11 @@ TEST(offset_map_test, flipping_should_work_on_square_image_for_top_left)
     ASSERT_FALSE(test.isFlipped());
 
     OffsetMapEntry *top_left = test.ptr(0, 0);
-    ASSERT_EQ(0, top_left->distance);
     top_left->distance = 100;
 
     // Check if it was really written there:
     OffsetMapEntry top_left_copy = test.at(0, 0);
     ASSERT_EQ(100, top_left_copy.distance);
-
-    // Check other corner:
-    OffsetMapEntry bottom_right_copy = test.at(99, 99);
-    ASSERT_EQ(0, bottom_right_copy.distance);
 
     // Flip offset map, test again.
     test.flip();
@@ -45,9 +39,9 @@ TEST(offset_map_test, flipping_should_work_on_square_image_for_top_left)
     ASSERT_EQ(100, test._width);
     ASSERT_EQ(100, test._height);
 
+    // Pointer to flipped top left should not be equal to unflipped top left!
     OffsetMapEntry *top_left_flipped = test.ptr(0, 0);
     EXPECT_NE(top_left, top_left_flipped);
-    EXPECT_EQ(0, top_left_flipped->distance);
 
     OffsetMapEntry *bottom_right_flipped = test.ptr(99, 99);
     EXPECT_EQ(top_left, bottom_right_flipped);
