@@ -18,6 +18,7 @@ public:
     OffsetMapEntry at(const int y, const int x) const;
     OffsetMapEntry* ptr(const int y, const int x);
     double summedDistance() const;
+    cv::Mat getDistanceImage() const;
     bool isFlipped() const { return _flipped; };
     void flip() { _flipped = !_flipped; };
 

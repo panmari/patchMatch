@@ -1,5 +1,8 @@
 #include "OffsetMap.h"
 
+using cv::Mat;
+using cv::Size;
+
 OffsetMap::OffsetMap(const int width, const int height) : _width(width), _height(height), _data(width * height) { }
 
 OffsetMapEntry OffsetMap::at(const int y, const int x) const {
@@ -28,4 +31,15 @@ double OffsetMap::summedDistance() const {
         sum += entry.distance;
     }
     return sum;
+}
+
+Mat OffsetMap::getDistanceImage() const {
+    Mat dist_image;
+    dist_image.create(Size(_width, _height), CV_32F);
+    for (int x = 0; x < dist_image.cols; x++) {
+        for (int y = 0; y < dist_image.rows; y++) {
+            dist_image.at<float>(y, x) = at(y, x).distance;
+        }
+    }
+    return dist_image;
 }

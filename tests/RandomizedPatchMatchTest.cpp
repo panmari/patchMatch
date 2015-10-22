@@ -36,14 +36,17 @@ TEST(randomized_patch_match_test, on_two_very_different_trivial_images)
     Mat img1 = Mat::zeros(20, 20, CV_32FC1);
     Mat img2 = Mat::ones(20, 20, CV_32FC1);
 
-    RandomizedPatchMatch rpm(img1, img2, 7, 0.f);
+    int patch_size = 7;
+    RandomizedPatchMatch rpm(img1, img2, patch_size, 0.f);
     OffsetMap* diff = rpm.match();
     double overall_ssd = diff->summedDistance();
-
+    Mat dist_img = diff->getDistanceImage();
+    imwrite("dist_img.exr", dist_img);
     delete(diff);
 
     // We expect for every patch (size - patch_size)^2 the maximum deviation of 7*7 (every pixel has SSD 1)
-    double expected_ssd = (20 - 7) * (20 - 7) * 7 * 7;
+    int error_per_patch = patch_size * patch_size;
+    double expected_ssd = (20 + 1 - patch_size) * (20 + 1 - patch_size) * error_per_patch;
     ASSERT_NEAR(expected_ssd, overall_ssd, EPSILON);
 }
 
@@ -51,7 +54,7 @@ TEST(randomized_patch_match_test, all_offsets_inside_image_on_random_images)
 {
     Mat img1 = Mat::zeros(20, 20, CV_32FC1);
     randu(img1, Scalar::all(0.0), Scalar::all(1.0f));
-    Mat img2 = Mat::ones(20, 20, CV_32FC1);
+    Mat img2 = Mat::ones(40, 40, CV_32FC1);
     randu(img2, Scalar::all(0.0), Scalar::all(1.0f));
 
     RandomizedPatchMatch rpm(img1, img2, 7);
