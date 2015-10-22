@@ -18,11 +18,17 @@ public:
     OffsetMapEntry at(const int y, const int x) const;
     OffsetMapEntry* ptr(const int y, const int x);
     double summedDistance() const;
-    cv::Mat getDistanceImage() const;
     bool isFlipped() const { return _flipped; };
     void flip() { _flipped = !_flipped; };
 
     const int _height, _width;
+
+    /**
+     * Some utilities for producing debugging output,
+     */
+    cv::Mat getDistanceImage() const;
+    cv::Mat toColorCodedImage() const;
+
 private:
     std::vector<OffsetMapEntry> _data;
     bool _flipped;

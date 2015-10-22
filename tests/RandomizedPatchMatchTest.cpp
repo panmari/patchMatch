@@ -11,6 +11,7 @@
 
 using cv::imread;
 using cv::Mat;
+using cv::Rect;
 using cv::Scalar;
 using cv::Vec3f;
 using pmutil::convert_for_computation;
@@ -40,8 +41,6 @@ TEST(randomized_patch_match_test, on_two_very_different_trivial_images)
     RandomizedPatchMatch rpm(img1, img2, patch_size, 0.f);
     OffsetMap* diff = rpm.match();
     double overall_ssd = diff->summedDistance();
-    Mat dist_img = diff->getDistanceImage();
-    imwrite("dist_img.exr", dist_img);
     delete(diff);
 
     // We expect for every patch (size - patch_size)^2 the maximum deviation of 7*7 (every pixel has SSD 1)
@@ -72,6 +71,28 @@ TEST(randomized_patch_match_test, all_offsets_inside_image_on_random_images)
     }
     delete(diff);
 }
+
+TEST(randomized_patch_match_test, images_with_displaced_rectangles_should_produce_little_dist)
+{
+    Mat img1 = Mat::ones(50, 50, CV_32FC1);
+    Mat img2 = Mat::ones(50, 50, CV_32FC1);
+
+    // Black rectangle on image 1
+    img1(Rect(10, 10, 5, 5)) = 0;
+    // Black rectangle on image 2 in slightly different location.
+    img2(Rect(20, 25, 5, 5)) = 0;
+
+    RandomizedPatchMatch rpm(img1, img2, 7);
+    OffsetMap* diff = rpm.match();
+    imwrite("offset_map_visualized.exr", diff->toColorCodedImage());
+    imwrite("dist_img.exr", diff->getDistanceImage());
+    delete(diff);
+
+    double overall_ssd = diff->summedDistance();
+    double expected_ssd = 0;
+    ASSERT_NEAR(expected_ssd, overall_ssd, EPSILON);
+}
+
 /*
 TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
 {

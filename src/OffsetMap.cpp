@@ -43,3 +43,31 @@ Mat OffsetMap::getDistanceImage() const {
     }
     return dist_image;
 }
+
+Mat OffsetMap::toColorCodedImage() const {
+    Mat hsv_img;
+    hsv_img.create(Size(_width, _height), CV_32F);
+
+    Mat angles = Mat::zeros(hsv_img.size(), CV_32FC1);
+    Mat magnitudes = Mat::zeros(hsv_img.size(), CV_32FC1);
+
+    // Produce some nice to look at output by coding angle to best patch as hue, magnitude as saturation.
+    for (int x = 0; x < hsv_img.cols; x++) {
+        for (int y = 0; y < hsv_img.rows; y++) {
+            OffsetMapEntry offset_map_entry = at(y, x);
+            float x_offset = offset_map_entry.offset.x;
+            float y_offset = offset_map_entry.offset.y;
+            float angle = atan2f(x_offset, y_offset);
+            if (angle < 0)
+                angle += CV_2PI;
+            angles.at<float>(y, x) = angle / CV_2PI * 360;
+            magnitudes.at<float>(y, x) = sqrt(x_offset*x_offset + y_offset*y_offset);
+        }
+    }
+    normalize(magnitudes, magnitudes, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
+    Mat hsv_array[] = {angles, magnitudes, Mat::ones(hsv_img.size(), CV_32FC1)};
+    cv::merge(hsv_array, 3, hsv_img);
+    cvtColor(hsv_img, hsv_img, CV_HSV2BGR);
+    return hsv_img;
+}
+

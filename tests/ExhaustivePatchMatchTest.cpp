@@ -45,7 +45,7 @@ TEST(exhaustive_patch_match_test, all_offsets_inside_image_on_random_images)
 {
 	Mat img1 = Mat::zeros(20, 20, CV_32FC1);
 	randu(img1, Scalar::all(0.0), Scalar::all(1.0f));
-	Mat img2 = Mat::ones(20, 20, CV_32FC1);
+	Mat img2 = Mat::ones(40, 20, CV_32FC1);
 	randu(img2, Scalar::all(0.0), Scalar::all(1.0f));
 
 	ExhaustivePatchMatch epm(img1, img2, 7);

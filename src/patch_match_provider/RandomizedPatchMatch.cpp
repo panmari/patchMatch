@@ -184,41 +184,6 @@ void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, co
     }
 }
 
-void RandomizedPatchMatch::dumpOffsetMapToFile(Mat &offset_map, String filename_modifier) const {
-    Mat xoffsets, yoffsets, diff, normed;
-    Mat out[] = {xoffsets, yoffsets, diff};
-    split(offset_map, out);
-    Mat angles = Mat::zeros(offset_map.size(), CV_32FC1);
-    Mat magnitudes = Mat::zeros(offset_map.size(), CV_32FC1);
-
-    // Produce some nice to look at output by coding angle to best patch as hue, magnitude as saturation.
-    for (int x = 0; x < offset_map.cols; x++) {
-        for (int y = 0; y < offset_map.rows; y++) {
-            Vec3f offset_map_entry = offset_map.at<Vec3f>(y, x);
-            float x_offset = offset_map_entry[0];
-            float y_offset = offset_map_entry[1];
-            float angle = atan2(x_offset, y_offset);
-            if (angle < 0)
-                angle += CV_2PI;
-            angles.at<float>(y, x) = angle / CV_2PI * 360;
-            magnitudes.at<float>(y, x) = sqrt(x_offset*x_offset + y_offset*y_offset);
-        }
-    }
-    normalize(magnitudes, magnitudes, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
-    Mat hsv_array[] = {angles, magnitudes, Mat::ones(offset_map.size(), CV_32FC1)};
-    Mat hsv;
-    cv::merge(hsv_array, 3, hsv);
-    cvtColor(hsv, hsv, CV_HSV2BGR);
-    imwrite("hsv_offsets" + filename_modifier + ".exr", hsv);
-
-    // Dump unnormalized values for inspection.
-    Mat offset_map_bgr;
-    cvtColor(offset_map, offset_map_bgr, CV_RGB2BGR);
-    imwrite("full_nnf" + filename_modifier + ".exr", offset_map_bgr);
-    normalize(out[2], normed, 0, 1, cv::NORM_MINMAX, CV_32FC1, Mat() );
-    imwrite("min_dist_img_normalized" + filename_modifier + ".exr", normed);
-}
-
 int RandomizedPatchMatch::findNumberScales(const Mat &source, const Mat &target, int patch_size) const {
     int min_dimension = std::min(std::min(std::min(source.cols, source.rows), target.cols), target.rows);
     return (int) log2( min_dimension/ (2.f * patch_size));
