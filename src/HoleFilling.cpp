@@ -24,18 +24,24 @@ const bool DUMP_INTERMEDIARY_RESULTS = true;
 const bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
 
 namespace {
-    static bool compare_by_x(Point a, Point b) {
+    bool compare_by_x(Point a, Point b) {
         return a.x < b.x;
     }
 
-    static bool compare_by_y(Point a, Point b) {
+    bool compare_by_y(Point a, Point b) {
         return a.y < b.y;
+    }
+
+    int computeNrScales(const Mat &img, int patch_size) {
+        int min_dimension = std::min(img.cols, img.rows);
+        float min_downscaled_size = 2 * patch_size;
+        return static_cast<int>(log2f( min_dimension / min_downscaled_size) + 0.5f);
     }
 }
 
 HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) :
         _img(img), _hole(hole), _patch_size(patch_size),
-        _nr_scales((int) log2(std::min(img.cols, img.rows) / (2.f * patch_size))) {
+        _nr_scales(computeNrScales(img, patch_size)) {
     buildPyramid(img, _img_pyr, _nr_scales);
     buildPyramid(hole, _hole_pyr, _nr_scales);
 
