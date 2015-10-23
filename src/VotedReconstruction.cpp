@@ -51,8 +51,8 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
             Rect current_patch_rect(x, y, _patch_size, _patch_size);
 
             reconstructed(current_patch_rect) += matching_patch * weight;
-            reconstructed_x_gradient(current_patch_rect) += matching_patch_grad_x;
-            reconstructed_y_gradient(current_patch_rect) += matching_patch_grad_y;
+            reconstructed_x_gradient(current_patch_rect) += matching_patch_grad_x * weight;
+            reconstructed_y_gradient(current_patch_rect) += matching_patch_grad_y * weight;
             // Remember for every pixel, how many patches were added up for later division.
             count(current_patch_rect) += weight;
         }
