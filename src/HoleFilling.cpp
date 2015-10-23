@@ -123,41 +123,12 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         // Better method for upscaling, see Wexler2007 Section 3.2
         int previous_scale = current_scale + 1;
         OffsetMap *previous_offset_map = _offset_map_pyr[previous_scale];
-        // Give 1 border, since we are using patches twice the size.
-        Mat source;
-        copyMakeBorder(_img_pyr[current_scale], source, 0, 1, 0, 1, cv::BORDER_REFLECT);
-        // Size is slightly different, since patches have double the size and stride 2.
-        cv::Size upscaled_solution_size((previous_offset_map->_width - 1) * 2 + _patch_size * 2,
-                                        (previous_offset_map->_height - 1) * 2 + _patch_size * 2);
-        upscaled_target_area = Mat::zeros(upscaled_solution_size, CV_32FC3);
-        Mat count = Mat::zeros(upscaled_solution_size, CV_32FC1);
-        // This is pretty close to voted reconstruction with some tricky bits added.
-        // TODO: Unify this code with voted reconstruction code.
-        // TODO: Make sure, the patch of twice the size does not overlap with hole.
-        for (int x = 0; x < previous_offset_map->_width; x++) {
-            for (int y = 0; y < previous_offset_map->_height; y++) {
-                // Go over all patches that contain this image.
-                OffsetMapEntry offset_map_entry = previous_offset_map->at(y, x);
-                int match_x = (x + offset_map_entry.offset.x) * 2;
-                int match_y = (y + offset_map_entry.offset.y) * 2;
-                // Get image data of matching patch
-                Rect matching_patch_rect(match_x, match_y, _patch_size * 2, _patch_size * 2);
-                Mat matching_patch = source(matching_patch_rect);
-
-                float weight = 1;
-                // Add to all pixels at once.
-                Rect current_patch_rect(x * 2, y * 2, _patch_size * 2, _patch_size * 2);
-
-                upscaled_target_area(current_patch_rect) += matching_patch * weight;
-
-                // Remember for every pixel, how many patches were added up for later division.
-                count(current_patch_rect) += weight;
-            }
-        }
-        // Divide every channel by count (reproduce counts on 3 channels first).
-        Mat weights3d;
-        cvtColor(count, weights3d, cv::COLOR_GRAY2BGR);
-        divide(upscaled_target_area, weights3d, upscaled_target_area);
+        Mat source = _img_pyr[current_scale];
+        Mat gx, gy;
+        pmutil::computeGradientX(source, gx);
+        pmutil::computeGradientY(source, gy);
+        VotedReconstruction vr(previous_offset_map, source, gx, gy, _patch_size, 2);
+        vr.reconstruct(upscaled_target_area);
 
         // Cut out the needed portion of the upscaled target area by
         // projecting top left of previous target area to new scale, compute offset to needed top left.

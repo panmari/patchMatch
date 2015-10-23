@@ -13,14 +13,14 @@ public:
      * The patch image is assumed to be the one referenced in offset_map.
      */
     VotedReconstruction(const OffsetMap *offset_map, const cv::Mat &source, const cv::Mat &source_grad_x,
-                        const cv::Mat &source_grad_y, int patch_size);
+                        const cv::Mat &source_grad_y, int patch_size, int scale = 1);
 
     void reconstruct(cv::Mat &reconstructed) const;
 
 private:
-    const cv::Mat _source, _source_grad_x, _source_grad_y;
+    cv::Mat _source, _source_grad_x, _source_grad_y;
     const OffsetMap *_offset_map;
-    int _patch_size;
+    const int _patch_size, _scale;
 
 };
 
