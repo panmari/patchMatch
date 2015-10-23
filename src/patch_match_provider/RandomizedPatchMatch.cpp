@@ -34,7 +34,6 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
         _patch_size(patch_size), _max_search_radius(max(target.cols, target.rows)),
         _nr_scales(findNumberScales(source, target, patch_size)), _lambda(lambda) {
     buildPyramid(source, _source_pyr, _nr_scales);
-    buildPyramid(target, _target_pyr, _nr_scales);
     for (Mat scaled_source: _source_pyr) {
         _source_rect_pyr.push_back(Rect(Point(0,0), scaled_source.size()));
         Mat gx;
@@ -44,15 +43,7 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
         computeGradientY(scaled_source, gy);
         _source_grad_y_pyr.push_back(gy);
     }
-    for (Mat scaled_target: _target_pyr) {
-        Mat lap;
-        Mat gx;
-        computeGradientX(scaled_target, gx);
-        _target_grad_x_pyr.push_back(gx);
-        Mat gy;
-        computeGradientY(scaled_target, gy);
-        _target_grad_y_pyr.push_back(gy);
-    }
+    setTargetArea(target);
 }
 
 OffsetMap* RandomizedPatchMatch::match() {
@@ -164,6 +155,21 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_rect,
     }
 
 }
+
+void RandomizedPatchMatch::setTargetArea(const cv::Mat &new_target_area) {
+    buildPyramid(new_target_area, _target_pyr, _nr_scales);
+    _target_grad_x_pyr.resize(0);
+    _target_grad_y_pyr.resize(0);
+    for (Mat scaled_target: _target_pyr) {
+        Mat gx;
+        computeGradientX(scaled_target, gx);
+        _target_grad_x_pyr.push_back(gx);
+        Mat gy;
+        computeGradientY(scaled_target, gy);
+        _target_grad_y_pyr.push_back(gy);
+    }
+}
+
 
 void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, const Mat &target_img, const int scale,
                                                        OffsetMap *offset_map) const {

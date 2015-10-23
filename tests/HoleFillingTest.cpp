@@ -38,6 +38,9 @@ TEST(hole_filling_test, one_pixel_hole_on_random_image_should_produce_correct_ta
 TEST(hole_filling_test, square_hole_on_repeated_texture_should_give_good_result)
 {
     Mat img = imread("test_images/brick_pavement.jpg");
+    if (!img.data) {
+        FAIL() << "Could not load image!";
+    }
     convert_for_computation(img, 0.5f);
 
     // Add some hole

@@ -20,7 +20,7 @@ using std::min_element;
  */
 const int EM_STEPS = 10;
 const bool WEXLER_UPSCALE = true;
-const bool DUMP_INTERMEDIARY_RESULTS = true;
+const bool DUMP_INTERMEDIARY_RESULTS = false;
 const bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
 
 namespace {
@@ -81,14 +81,12 @@ Mat HoleFilling::run() {
         // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
         // TODO: Possibly set some other value here.
         source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
+        RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
         for (int i = 0; i < EM_STEPS; i++) {
             if (i > 0) {
                 // Delete previous offset map.
                 delete (_offset_map_pyr[scale]);
             }
-            RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
-
-
             _offset_map_pyr[scale] = rmp.match();
             if (DUMP_INTERMEDIARY_RESULTS) {
                 cv::String modifier = str(format("scale_%d_iter_%02d") % scale % i);
@@ -106,6 +104,7 @@ Mat HoleFilling::run() {
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
             Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
             reconstructed.copyTo(_target_area_pyr[scale], write_back_mask);
+            rmp.setTargetArea(_target_area_pyr[scale]);
         }
     }
     for (OffsetMap *offset_map :_offset_map_pyr) {
