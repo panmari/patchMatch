@@ -24,6 +24,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
     Mat reconstructed_x_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
     Mat reconstructed_y_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
 
+    // Wexler et al suggest using the 75 percentile of the distances as sigma.
     const float sigma = _offset_map->get75PercentileDistance();
     const float two_sigma_sqr = sigma * sigma * 2;
     Mat count = Mat::zeros(reconstructed.size(), CV_32FC1);
