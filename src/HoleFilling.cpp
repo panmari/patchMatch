@@ -6,6 +6,7 @@
 
 using boost::format;
 using cv::findNonZero;
+using cv::countNonZero;
 using cv::Mat;
 using cv::Point;
 using cv::pyrUp;
@@ -20,7 +21,7 @@ using std::min_element;
  */
 const int EM_STEPS = 10;
 const bool WEXLER_UPSCALE = true;
-const bool DUMP_INTERMEDIARY_RESULTS = false;
+const bool DUMP_INTERMEDIARY_RESULTS = true;
 const bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
 
 namespace {
@@ -65,10 +66,13 @@ Mat HoleFilling::run() {
             // Make some initial guess, here mean color of whole image.
             // TODO: Do some interpolation of borders for better initial guess.
             Rect low_res_target_rect = _target_rect_pyr[_nr_scales];
+            Mat low_res_inverted_mask = 255 - _hole_pyr[_nr_scales](low_res_target_rect);
+            Mat without_hole;
+            source(low_res_target_rect).copyTo(without_hole, low_res_inverted_mask);
+            Scalar mean_color = sum(without_hole) / countNonZero(low_res_inverted_mask);
             Mat initial_guess = source(low_res_target_rect).clone();
-            Scalar mean_color = sum(source) / (source.cols * source.rows);
             initial_guess.setTo(mean_color, _hole_pyr[_nr_scales](low_res_target_rect));
-            initial_guess.copyTo(_target_area_pyr[_nr_scales]);
+            _target_area_pyr[_nr_scales] = initial_guess;
 
         } else {
             Mat upscaled_solution = upscaleSolution(scale);
