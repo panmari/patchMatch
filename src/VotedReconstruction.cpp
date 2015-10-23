@@ -29,10 +29,10 @@ VotedReconstruction::VotedReconstruction(const OffsetMap *offset_map, const Mat 
     }
 }
 
-void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
+void VotedReconstruction::reconstruct(Mat &reconstructed) const {
     Size reconstructed_size((_offset_map->_width - 1 + _patch_size) * _scale,
                             (_offset_map->_height - 1 + _patch_size) * _scale);
-    Mat reconstructed = Mat::zeros(reconstructed_size, CV_32FC3);
+    reconstructed = Mat::zeros(reconstructed_size, CV_32FC3);
     Mat reconstructed_x_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
     Mat reconstructed_y_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
 
@@ -67,7 +67,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
 
             for (int x_patch = 0; x_patch < _patch_size * _scale; x_patch++) {
                 for (int y_patch = 0; y_patch < _patch_size * _scale; y_patch++) {
-                    int idx = x + x_patch + (_offset_map->_width + _patch_size * _scale) * (y + y_patch);
+                    int idx = x + x_patch + (_offset_map->_width - 1 + _patch_size) * _scale * (y + y_patch);
                     colors[idx].push_back(matching_patch.at<Vec3f>(y_patch, x_patch));
                     weights[idx].push_back(weight);
                 }
@@ -107,9 +107,13 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
             }
         }
         // TODO: find out correct index in reconstruction, save final color divided by total weight there.
-        // int y =
+        int y = i / ((_offset_map->_width - 1 + _patch_size) * _scale);
+        int x = i % ((_offset_map->_width - 1 + _patch_size) * _scale);
+        reconstructed.at<Vec3f>(y, x) = final_color / total_weight;
     }
+
     // Divide every channel by count (reproduce counts on 3 channels first).
+    /*
     Mat weights3d;
     cvtColor(count, weights3d, COLOR_GRAY2BGR);
     divide(reconstructed, weights3d, reconstructed);
@@ -117,4 +121,5 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
     divide(reconstructed_y_gradient, weights3d, reconstructed_y_gradient);
     PoissonSolver ps(reconstructed, reconstructed_x_gradient, reconstructed_y_gradient);
     ps.solve(reconstructed_solved);
+    */
 }
