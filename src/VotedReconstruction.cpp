@@ -40,7 +40,6 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
 
             float weight;
             if (WEIGHTED_BY_SIMILARITY) {
-                // Apply square root to get L2 distance (kind of), then divide by patchsize.
                 float normalized_dist = sqrtf(offset_map_entry.distance);
                 weight = expf(-normalized_dist / two_sigma_sqr);
             }
