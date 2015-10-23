@@ -147,12 +147,12 @@ namespace pmutil {
         modes->resize(0);
         mode_assignments->resize(0);
         const double two_sigma_sqr = 2 * sigma * sigma;
-        for (Vec3f color: colors) {
+        for (const Vec3f &color: colors) {
             Vec3f center(color);
             while (true) {
                 Vec3f new_center = Vec3f(0, 0, 0);
                 double total_weight = 0;
-                for (Vec3f other_color: colors) {
+                for (const Vec3f &other_color: colors) {
                     auto dir = center - other_color;
                     double dist = cv::norm(dir);
                     double weight = exp(-dist / two_sigma_sqr);
@@ -166,7 +166,7 @@ namespace pmutil {
             }
             bool create_mode = true;
             for (int i = 0; i < modes->size(); i++) {
-                Vec3f mode = modes->at(i);
+                const Vec3f &mode = modes->at(i);
                 if (cv::norm(center, mode) < MIN_CLUSTER_DISTANCE) {
                     mode_assignments->push_back(i);
                     create_mode = false;
