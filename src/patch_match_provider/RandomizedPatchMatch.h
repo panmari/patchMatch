@@ -49,7 +49,7 @@ private:
      * Also the corresponding SSD is computed.
      */
     void initializeWithRandomOffsets(const cv::Mat &target_img, const cv::Mat &source_img, const int scale,
-                                     OffsetMap *offset_map) const;
+                                     OffsetMap *offset_map, unsigned int random_seed = 42) const;
 
     /**
      * Updates 'offset_map_entry' with the given 'candidate_offset' if the patch corresponding to 'candidate_rect' on

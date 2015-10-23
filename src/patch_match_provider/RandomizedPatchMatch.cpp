@@ -57,7 +57,8 @@ OffsetMap* RandomizedPatchMatch::match() {
         const int width = target.cols - _patch_size + 1;
         const int height = target.rows - _patch_size + 1;
         OffsetMap *offset_map = new OffsetMap(width, height);
-        initializeWithRandomOffsets(source, target, scale, offset_map);
+        unsigned int random_seed = static_cast<unsigned int>(target.rows * target.cols);
+        initializeWithRandomOffsets(source, target, scale, offset_map, random_seed);
 
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
             // After half the iterations, merge the lower resolution offset where they're better.
@@ -172,10 +173,9 @@ void RandomizedPatchMatch::setTargetArea(const cv::Mat &new_target_area) {
 
 
 void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, const Mat &target_img, const int scale,
-                                                       OffsetMap *offset_map) const {
+                                                       OffsetMap *offset_map, unsigned int random_seed) const {
     // Seed random generator to have reproducable results.
-    // TODO: Use a better initialization to get better results over multiple EM-Steps.
-    srand(target_img.rows * target_img.cols);
+    srand(random_seed);
     for (int x = 0; x < offset_map->_width; x++) {
         for (int y = 0; y < offset_map->_height; y++) {
             // Choose offset carefully, so resulting point (when added to current coordinate), is not outside image.

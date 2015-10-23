@@ -17,7 +17,7 @@ public:
     OffsetMap(const int width, const int height);
     OffsetMapEntry at(const int y, const int x) const;
     OffsetMapEntry* ptr(const int y, const int x);
-    double summedDistance() const;
+
     bool isFlipped() const { return _flipped; };
     void flip() { _flipped = !_flipped; };
 
@@ -28,6 +28,7 @@ public:
      */
     cv::Mat getDistanceImage() const;
     cv::Mat toColorCodedImage() const;
+    double summedDistance() const;
 
 private:
     std::vector<OffsetMapEntry> _data;
