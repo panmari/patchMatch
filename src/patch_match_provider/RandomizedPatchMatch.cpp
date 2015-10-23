@@ -201,15 +201,23 @@ float RandomizedPatchMatch::patchDistance(const cv::Rect &source_rect, const cv:
                                           const float previous_dist) const {
     Mat source_patch = _source_pyr[scale](source_rect);
     Mat target_patch = _target_pyr[scale](target_rect);
-    double ssd_img = ssd_unsafe(source_patch, target_patch, previous_dist);
+    double ssd = ssd_unsafe(source_patch, target_patch, previous_dist);
+
+    if (ssd > previous_dist || _lambda == 0)
+        return static_cast<float>(ssd);
 
     Mat source_grad_x_patch = _source_grad_x_pyr[scale](source_rect);
     Mat target_grad_x_patch = _target_grad_x_pyr[scale](target_rect);
     double ssd_grad_x = ssd_unsafe(source_grad_x_patch, target_grad_x_patch);
+    ssd += ssd_grad_x * _lambda;
+
+    if (ssd > previous_dist)
+        return static_cast<float>(ssd);
 
     Mat source_grad_y_patch = _source_grad_y_pyr[scale](source_rect);
     Mat target_grad_y_patch = _target_grad_y_pyr[scale](target_rect);
     double ssd_grad_y = ssd_unsafe(source_grad_y_patch, target_grad_y_patch);
+    ssd += ssd_grad_y * _lambda;
 
-    return static_cast<float>(ssd_img + _lambda * (ssd_grad_x + ssd_grad_y));
+    return static_cast<float>(ssd);
 }
