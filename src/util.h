@@ -4,6 +4,7 @@
 #include "boost/format.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include <vector>
 
 namespace pmutil {
 
@@ -130,6 +131,55 @@ namespace pmutil {
             merge(tmp, 3, gy);
         }
     }
+
+    const double MIN_SHIFT_DISTANCE = 0.01;
+    const double MIN_CLUSTER_DISTANCE = 0.1;
+
+    /**
+     * Does mean shift on the given colors with a gaussian kernel (using the given sigma).
+     * The found modes (cluster centers) are saved in the given modes array, the assignments in the other.
+     *
+     * @param mode_assignments returns a vector of the same size as 'colors', 
+     *   with values between 0 and size of 'modes' - 1.
+     */
+    static void naiveMeanShift(const std::vector<Vec3f> &colors, const double sigma,
+                               std::vector<Vec3f> *modes, std::vector<int> *mode_assignments) {
+        modes->resize(0);
+        mode_assignments->resize(0);
+        const double two_sigma_sqr = 2 * sigma * sigma;
+        for (Vec3f color: colors) {
+            Vec3f center(color);
+            while (true) {
+                Vec3f new_center = Vec3f(0, 0, 0);
+                double total_weight = 0;
+                for (Vec3f other_color: colors) {
+                    auto dir = center - other_color;
+                    double dist = cv::norm(dir);
+                    double weight = exp(-dist / two_sigma_sqr);
+                    new_center += weight * other_color;
+                    total_weight += weight;
+                }
+                new_center /= total_weight;
+                if (cv::norm(new_center, center) < MIN_SHIFT_DISTANCE)
+                    break;
+                center = new_center;
+            }
+            bool create_mode = true;
+            for (int i = 0; i < modes->size(); i++) {
+                Vec3f mode = modes->at(i);
+                if (cv::norm(center, mode) < MIN_CLUSTER_DISTANCE) {
+                    mode_assignments->push_back(i);
+                    create_mode = false;
+                    break;
+                }
+            }
+            if (create_mode) {
+                mode_assignments->push_back(static_cast<int>(modes->size()));
+                modes->push_back(center);
+            }
+        }
+    }
+
 }
 
 #endif //PATCHMATCH_UTIL_H

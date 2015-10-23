@@ -2,7 +2,6 @@
 #include "patch_match_provider/RandomizedPatchMatch.h"
 #include "VotedReconstruction.h"
 #include "util.h"
-#include "boost/format.hpp"
 
 using boost::format;
 using cv::findNonZero;
