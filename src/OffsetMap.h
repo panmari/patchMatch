@@ -21,6 +21,8 @@ public:
     bool isFlipped() const { return _flipped; };
     void flip() { _flipped = !_flipped; };
 
+    float get75PercentileDistance() const;
+
     const int _height, _width;
 
     /**

@@ -11,8 +11,7 @@ using cv::Vec3f;
 /**
  * Patches with higher similarity have higher weights in reconstruction. If false, ever patch has the same weight (1).
  */
-const bool WEIGHTED_BY_SIMILARITY = false;
-const float SIGMA_SQR = 1;
+const bool WEIGHTED_BY_SIMILARITY = true;
 
 VotedReconstruction::VotedReconstruction(const OffsetMap *offset_map, const Mat &source, const Mat &source_grad_x,
                                          const Mat &source_grad_y, int patch_size) :
@@ -25,6 +24,8 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
     Mat reconstructed_x_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
     Mat reconstructed_y_gradient = Mat::zeros(reconstructed_size, CV_32FC3);
 
+    const float sigma = _offset_map->get75PercentileDistance();
+    const float two_sigma_sqr = sigma * sigma * 2;
     Mat count = Mat::zeros(reconstructed.size(), CV_32FC1);
     for (int x = 0; x < _offset_map->_width; x++) {
         for (int y = 0; y < _offset_map->_height; y++) {
@@ -40,8 +41,8 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
             float weight;
             if (WEIGHTED_BY_SIMILARITY) {
                 // Apply square root to get L2 distance (kind of), then divide by patchsize.
-                float normalized_dist = sqrt(offset_map_entry.distance) / (_patch_size  * _patch_size);
-                weight = exp(-normalized_dist / 2 * SIGMA_SQR);
+                float normalized_dist = sqrtf(offset_map_entry.distance);
+                weight = expf(-normalized_dist / two_sigma_sqr);
             }
             else {
                 weight = 1;

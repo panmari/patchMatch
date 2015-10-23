@@ -2,6 +2,15 @@
 
 using cv::Mat;
 using cv::Size;
+using std::sort;
+using std::transform;
+using std::vector;
+
+namespace {
+    float map_to_distance(const OffsetMapEntry &entry) {
+        return entry.distance;
+    }
+}
 
 OffsetMap::OffsetMap(const int width, const int height) : _width(width), _height(height), _data(width * height) { }
 
@@ -23,6 +32,14 @@ OffsetMapEntry *OffsetMap::ptr(const int y, const int x) {
     } else {
         return &_data[y + x * _height];
     }
+}
+
+float OffsetMap::get75PercentileDistance() const {
+    vector<float> distances(_data.size());
+    transform(_data.begin(), _data.end(), distances.begin(), map_to_distance);
+    sort(distances.begin(), distances.end());
+    int percentile_idx = static_cast<int>((distances.size() - 1) * 3.0 / 4.0);
+    return distances[percentile_idx];
 }
 
 double OffsetMap::summedDistance() const {

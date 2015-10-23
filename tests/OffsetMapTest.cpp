@@ -48,3 +48,15 @@ TEST(offset_map_test, flipping_should_work_on_square_image_for_top_left)
 
     EXPECT_EQ(100, bottom_right_flipped->distance);
 }
+
+TEST(offset_map_test, percentile_distance_should_be_computed_correctly)
+{
+    OffsetMap test = OffsetMap(4, 1);
+    test.ptr(0, 0)->distance = 10;
+    test.ptr(0, 1)->distance = 40;
+    test.ptr(0, 2)->distance = 60;
+    test.ptr(0, 3)->distance = 1000;
+
+    float gotten_percentile = test.get75PercentileDistance();
+    ASSERT_EQ(60, gotten_percentile);
+}
