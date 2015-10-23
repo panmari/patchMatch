@@ -61,3 +61,15 @@ TEST(utility_test, naive_mean_shift_with_two_very_different_colors_and_large_ker
     }
     EXPECT_EQ(mode_assignments[0], 0);
 }
+
+TEST(utility_test, std_method_test)
+{
+    vector<Vec3f> colors{ Vec3f(20, 20, 20), Vec3f{ 50, 50, 50 } };
+    cv::Scalar mean, std;
+    cv::meanStdDev(colors, mean, std);
+
+    EXPECT_EQ(cv::Scalar(35, 35, 35), mean);
+    // This computes population standard deviation, so we divide by N, not N - 1.
+    float expected_std = sqrtf((powf(35 - 20, 2) + powf(35 - 50, 2)) / 2);
+    EXPECT_EQ(cv::Scalar(expected_std, expected_std, expected_std), std);
+}

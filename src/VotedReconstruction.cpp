@@ -68,7 +68,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
             for (int x_patch = 0; x_patch < _patch_size * _scale; x_patch++) {
                 for (int y_patch = 0; y_patch < _patch_size * _scale; y_patch++) {
                     int idx = x + x_patch + (_offset_map->_width + _patch_size * _scale) * (y + y_patch);
-                    colors[idx].push_back(matching_patch.at(y_patch, x_patch));
+                    colors[idx].push_back(matching_patch.at<Vec3f>(y_patch, x_patch));
                     weights[idx].push_back(weight);
                 }
             }
@@ -82,8 +82,8 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
 
     for (int i = 0; i < colors.size(); i++) {
         const vector<Vec3f> one_pixel_colors = colors[i];
-        Scalar std;
-        meanStdDev(one_pixel_colors, nullptr, std);
+        Scalar mean, std;
+        meanStdDev(one_pixel_colors, mean, std);
         float sigma_mean_shift = (std[0] + std[1] + std[2]) / 3;
 
         vector<Vec3f> modes;
@@ -107,7 +107,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
             }
         }
         // TODO: find out correct index in reconstruction, save final color divided by total weight there.
-        int y =
+        // int y =
     }
     // Divide every channel by count (reproduce counts on 3 channels first).
     Mat weights3d;
