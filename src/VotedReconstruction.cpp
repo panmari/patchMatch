@@ -1,12 +1,16 @@
 #include "VotedReconstruction.h"
 #include "PoissonSolver.h"
+#include "util.h"
 
 using cv::COLOR_GRAY2BGR;
 using cv::divide;
 using cv::Mat;
+using cv::meanStdDev;
 using cv::Rect;
 using cv::Size;
 using cv::Vec3f;
+using pmutil::naiveMeanShift;
+using std::vector;
 
 /**
  * Patches with higher similarity have higher weights in reconstruction. If false, ever patch has the same weight (1).
@@ -36,6 +40,8 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
     const float sigma = _offset_map->get75PercentileDistance();
     const float two_sigma_sqr = sigma * sigma * 2;
     Mat count = Mat::zeros(reconstructed.size(), CV_32FC1);
+    vector<vector<Vec3f>> colors(reconstructed_size.width * reconstructed_size.height);
+    vector<vector<float>> weights(reconstructed_size.width * reconstructed_size.height);
     for (int x = 0; x < _offset_map->_width; x++) {
         for (int y = 0; y < _offset_map->_height; y++) {
             // Go over all patches that contain this image.
@@ -59,14 +65,50 @@ void VotedReconstruction::reconstruct(Mat &reconstructed_solved) const {
             // Add to all pixels at once.
             Rect current_patch_rect(x * _scale, y * _scale, _patch_size * _scale, _patch_size * _scale);
 
-            reconstructed(current_patch_rect) += matching_patch * weight;
-            reconstructed_x_gradient(current_patch_rect) += matching_patch_grad_x * weight;
-            reconstructed_y_gradient(current_patch_rect) += matching_patch_grad_y * weight;
+            for (int x_patch = 0; x_patch < _patch_size * _scale; x_patch++) {
+                for (int y_patch = 0; y_patch < _patch_size * _scale; y_patch++) {
+                    int idx = x + x_patch + (_offset_map->_width + _patch_size * _scale) * (y + y_patch);
+                    colors[idx].push_back(matching_patch.at(y_patch, x_patch));
+                    weights[idx].push_back(weight);
+                }
+            }
+            // reconstructed(current_patch_rect) += matching_patch * weight;
+            // reconstructed_x_gradient(current_patch_rect) += matching_patch_grad_x * weight;
+            // reconstructed_y_gradient(current_patch_rect) += matching_patch_grad_y * weight;
             // Remember for every pixel, how many patches were added up for later division.
-            count(current_patch_rect) += weight;
+            // count(current_patch_rect) += weight;
         }
     }
 
+    for (int i = 0; i < colors.size(); i++) {
+        const vector<Vec3f> one_pixel_colors = colors[i];
+        Scalar std;
+        meanStdDev(one_pixel_colors, nullptr, std);
+        float sigma_mean_shift = (std[0] + std[1] + std[2]) / 3;
+
+        vector<Vec3f> modes;
+        vector<int> mode_assignments;
+        naiveMeanShift(one_pixel_colors, sigma_mean_shift, &modes, &mode_assignments);
+
+        vector<int> occurences(modes.size(), 0);
+        for (int assignment: mode_assignments) {
+            occurences[assignment]++;
+        }
+        auto max_occurences_iter = std::max_element(occurences.begin(), occurences.end());
+        int max_mode = std::distance(mode_assignments.begin(), max_occurences_iter);
+        const vector<float> one_pixel_weights = weights[i];
+        Vec3f final_color(0, 0, 0);
+        double total_weight;
+        for (int color_idx = 0; color_idx < one_pixel_colors.size(); color_idx++) {
+            if (mode_assignments[color_idx] == max_mode) {
+                float weight = one_pixel_weights[color_idx];
+                final_color += one_pixel_colors[color_idx] * weight;
+                total_weight += total_weight;
+            }
+        }
+        // TODO: find out correct index in reconstruction, save final color divided by total weight there.
+        int y =
+    }
     // Divide every channel by count (reproduce counts on 3 channels first).
     Mat weights3d;
     cvtColor(count, weights3d, COLOR_GRAY2BGR);

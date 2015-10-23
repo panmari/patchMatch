@@ -139,7 +139,7 @@ namespace pmutil {
      * Does mean shift on the given colors with a gaussian kernel (using the given sigma).
      * The found modes (cluster centers) are saved in the given modes array, the assignments in the other.
      *
-     * @param mode_assignments returns a vector of the same size as 'colors', 
+     * @param mode_assignments returns a vector of the same size as 'colors',
      *   with values between 0 and size of 'modes' - 1.
      */
     static void naiveMeanShift(const std::vector<Vec3f> &colors, const double sigma,
