@@ -18,7 +18,7 @@ using std::min_element;
 /**
  * Number of iterations for expectation maximization, in our case reconstruction and building of NNF.
  */
-const int EM_STEPS = 10;
+const int EM_STEPS = 20;
 const bool WEXLER_UPSCALE = true;
 const bool DUMP_INTERMEDIARY_RESULTS = true;
 const bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
@@ -84,7 +84,7 @@ Mat HoleFilling::run() {
         // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
         // TODO: Possibly set some other value here.
         source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
-        RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size);
+        RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size, 0);
         for (int i = 0; i < EM_STEPS; i++) {
             if (i > 0) {
                 // Delete previous offset map.
@@ -100,7 +100,8 @@ Mat HoleFilling::run() {
                 // cvtColor(source, img_bgr, CV_Lab2BGR);
                 //pmutil::dumpNearestPatches(_offset_map_pyr[scale], img_bgr, _patch_size, modifier);
             }
-            VotedReconstruction vr(_offset_map_pyr[scale], source, rmp.getSourceGradientX(), rmp.getSourceGradientY(),
+            VotedReconstruction vr(_offset_map_pyr[scale], source,
+                                   rmp.getSourceGradientX(), rmp.getSourceGradientY(),
                                    _patch_size);
             float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / EM_STEPS;
             Mat reconstructed;
