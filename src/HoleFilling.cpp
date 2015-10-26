@@ -102,7 +102,7 @@ Mat HoleFilling::run() {
             VotedReconstruction vr(_offset_map_pyr[scale], source,
                                    rmp.getSourceGradientX(), rmp.getSourceGradientY(),
                                    _patch_size);
-            float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / EM_STEPS;
+            float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / (EM_STEPS - 1);
             Mat reconstructed;
             vr.reconstruct(reconstructed, mean_shift_bandwith_scale);
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
