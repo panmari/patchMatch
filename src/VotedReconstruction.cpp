@@ -18,6 +18,53 @@ using std::vector;
  */
 const bool WEIGHTED_BY_SIMILARITY = true;
 
+namespace {
+    class ParallelModeAwareReconstruction : public cv::ParallelLoopBody {
+    private:
+        const vector<vector<Vec3f>> _colors;
+        const vector<vector<float>> _weights;
+        const float _mean_shift_bandwith_scale;
+        Mat *_reconstructed_flat;
+
+    public:
+        ParallelModeAwareReconstruction(const vector<vector<Vec3f>> &colors, const vector<vector<float>> &weights,
+                                        const float mean_shift_bandwith_scale, Mat *reconstructed_flat)
+                : _colors(colors), _weights(weights), _mean_shift_bandwith_scale(mean_shift_bandwith_scale),
+                  _reconstructed_flat(reconstructed_flat) { }
+
+        virtual void operator()(const cv::Range &r) const {
+            for (int i = r.start; i < r.end; i++) {
+                const vector<Vec3f> one_pixel_colors = _colors[i];
+                Scalar mean, std;
+                meanStdDev(one_pixel_colors, mean, std);
+                float sigma_mean_shift = static_cast<float>(std[0] + std[1] + std[2]) / 3 * _mean_shift_bandwith_scale;
+
+                vector<Vec3f> modes;
+                vector<int> mode_assignments;
+                naiveMeanShift(one_pixel_colors, sigma_mean_shift, &modes, &mode_assignments);
+                vector<int> occurences(modes.size(), 0);
+                for (int assignment: mode_assignments) {
+                    occurences[assignment]++;
+                }
+                // TODO: if only one mode is present, just take it as final color here (is not exactly the same, but close enough?).
+                auto max_occurences_iter = std::max_element(occurences.begin(), occurences.end());
+                long max_mode = std::distance(occurences.begin(), max_occurences_iter);
+                const vector<float> one_pixel_weights = _weights[i];
+                Vec3f final_color(0, 0, 0);
+                double total_weight = 0;
+                for (int color_idx = 0; color_idx < one_pixel_colors.size(); color_idx++) {
+                    if (mode_assignments[color_idx] == max_mode) {
+                        float weight = one_pixel_weights[color_idx];
+                        final_color += one_pixel_colors[color_idx] * weight;
+                        total_weight += weight;
+                    }
+                }
+                _reconstructed_flat->at<Vec3f>(i) = final_color / total_weight;
+            }
+        }
+    };
+}
+
 VotedReconstruction::VotedReconstruction(const OffsetMap *offset_map, const Mat &source, const Mat &source_grad_x,
                                          const Mat &source_grad_y, int patch_size, int scale) :
         _offset_map(offset_map), _source(source), _source_grad_x(source_grad_x), _source_grad_y(source_grad_y),
@@ -79,34 +126,8 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
         }
     }
     Mat reconstructed_flat = reconstructed.reshape(3, 1);
-    for (int i = 0; i < colors.size(); i++) {
-        const vector<Vec3f> one_pixel_colors = colors[i];
-        Scalar mean, std;
-        meanStdDev(one_pixel_colors, mean, std);
-        float sigma_mean_shift = static_cast<float>(std[0] + std[1] + std[2]) / 3 * mean_shift_bandwith_scale;
-
-        vector<Vec3f> modes;
-        vector<int> mode_assignments;
-        naiveMeanShift(one_pixel_colors, sigma_mean_shift, &modes, &mode_assignments);
-        vector<int> occurences(modes.size(), 0);
-        for (int assignment: mode_assignments) {
-            occurences[assignment]++;
-        }
-        // TODO: if only one mode is present, just take it as final color here (is not exactly the same, but close enough?).
-        auto max_occurences_iter = std::max_element(occurences.begin(), occurences.end());
-        long max_mode = std::distance(occurences.begin(), max_occurences_iter);
-        const vector<float> one_pixel_weights = weights[i];
-        Vec3f final_color(0, 0, 0);
-        double total_weight = 0;
-        for (int color_idx = 0; color_idx < one_pixel_colors.size(); color_idx++) {
-            if (mode_assignments[color_idx] == max_mode) {
-                float weight = one_pixel_weights[color_idx];
-                final_color += one_pixel_colors[color_idx] * weight;
-                total_weight += weight;
-            }
-        }
-        reconstructed_flat.at<Vec3f>(i) = final_color / total_weight;
-    }
+    parallel_for_(cv::Range(0, colors.size() - 1),
+                  ParallelModeAwareReconstruction(colors, weights, mean_shift_bandwith_scale, &reconstructed_flat));
     // Divide every channel by count (reproduce counts on 3 channels first).
     /*
     Mat weights3d;
@@ -118,3 +139,4 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
     ps.solve(reconstructed_solved);
     */
 }
+
