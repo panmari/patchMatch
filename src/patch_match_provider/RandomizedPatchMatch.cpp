@@ -113,8 +113,8 @@ OffsetMap* RandomizedPatchMatch::match() {
                         Point current_offset = offset_map_entry->offset;
                         float current_search_radius = _max_search_radius;
                         while (current_search_radius > 1) {
-                            Point random_point = Point(rng.uniform(-1.f, 1.f) * current_search_radius,
-                                                       rng.uniform(-1.f, 1.f) * current_search_radius);
+                            Point random_point = Point(cvRound(rng.uniform(-1.f, 1.f) * current_search_radius),
+                                                       cvRound(rng.uniform(-1.f, 1.f) * current_search_radius));
                             Point random_offset = current_offset + random_point;
                             Rect random_rect(x_unflipped + random_offset.x,
                                              y_unflipped + random_offset.y, _patch_size, _patch_size);
