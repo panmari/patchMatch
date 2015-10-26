@@ -65,7 +65,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed) const {
 
             for (int x_patch = 0; x_patch < _patch_size * _scale; x_patch++) {
                 for (int y_patch = 0; y_patch < _patch_size * _scale; y_patch++) {
-                    int idx = x + x_patch + (_offset_map->_width - 1 + _patch_size) * _scale * (y + y_patch);
+                    int idx = x * _scale + x_patch + reconstructed_size.width * (y * _scale + y_patch);
                     colors[idx].push_back(matching_patch.at<Vec3f>(y_patch, x_patch));
                     weights[idx].push_back(weight);
                 }
@@ -92,11 +92,12 @@ void VotedReconstruction::reconstruct(Mat &reconstructed) const {
         for (int assignment: mode_assignments) {
             occurences[assignment]++;
         }
+        // TODO: if only one mode is present, just take it as final color here.
         auto max_occurences_iter = std::max_element(occurences.begin(), occurences.end());
         int max_mode = std::distance(occurences.begin(), max_occurences_iter);
         const vector<float> one_pixel_weights = weights[i];
         Vec3f final_color(0, 0, 0);
-        double total_weight;
+        double total_weight = 0;
         for (int color_idx = 0; color_idx < one_pixel_colors.size(); color_idx++) {
             if (mode_assignments[color_idx] == max_mode) {
                 float weight = one_pixel_weights[color_idx];
@@ -105,8 +106,8 @@ void VotedReconstruction::reconstruct(Mat &reconstructed) const {
             }
         }
         // TODO: find out correct index in reconstruction, save final color divided by total weight there.
-        int y = i / ((_offset_map->_width - 1 + _patch_size) * _scale);
-        int x = i % ((_offset_map->_width - 1 + _patch_size) * _scale);
+        int y = i / reconstructed_size.width;
+        int x = i % reconstructed_size.width;
         reconstructed.at<Vec3f>(y, x) = final_color / total_weight;
     }
 
