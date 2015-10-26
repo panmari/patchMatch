@@ -77,7 +77,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
             // count(current_patch_rect) += weight;
         }
     }
-
+    Mat reconstructed_flat = reconstructed.reshape(3, 1);
     for (int i = 0; i < colors.size(); i++) {
         const vector<Vec3f> one_pixel_colors = colors[i];
         Scalar mean, std;
@@ -94,7 +94,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
         }
         // TODO: if only one mode is present, just take it as final color here.
         auto max_occurences_iter = std::max_element(occurences.begin(), occurences.end());
-        int max_mode = std::distance(occurences.begin(), max_occurences_iter);
+        long max_mode = std::distance(occurences.begin(), max_occurences_iter);
         const vector<float> one_pixel_weights = weights[i];
         Vec3f final_color(0, 0, 0);
         double total_weight = 0;
@@ -105,11 +105,8 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
                 total_weight += weight;
             }
         }
-        int y = i / reconstructed_size.width;
-        int x = i % reconstructed_size.width;
-        reconstructed.at<Vec3f>(y, x) = final_color / total_weight;
+        reconstructed_flat.at<Vec3f>(i) = final_color / total_weight;
     }
-
     // Divide every channel by count (reproduce counts on 3 channels first).
     /*
     Mat weights3d;
