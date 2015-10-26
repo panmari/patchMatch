@@ -57,7 +57,7 @@ OffsetMap* RandomizedPatchMatch::match() {
         const int width = target.cols - _patch_size + 1;
         const int height = target.rows - _patch_size + 1;
         OffsetMap *offset_map = new OffsetMap(width, height);
-        unsigned int random_seed = static_cast<unsigned int>(target.rows * target.cols);
+        unsigned int random_seed = static_cast<unsigned int>(target.rows * target.cols + _target_updated_count);
         initializeWithRandomOffsets(source, target, scale, offset_map, random_seed);
 
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
@@ -158,6 +158,7 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_rect,
 }
 
 void RandomizedPatchMatch::setTargetArea(const cv::Mat &new_target_area) {
+    _target_updated_count++;
     buildPyramid(new_target_area, _target_pyr, _nr_scales);
     _target_grad_x_pyr.resize(0);
     _target_grad_y_pyr.resize(0);
