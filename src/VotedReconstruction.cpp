@@ -29,7 +29,7 @@ VotedReconstruction::VotedReconstruction(const OffsetMap *offset_map, const Mat 
     }
 }
 
-void VotedReconstruction::reconstruct(Mat &reconstructed) const {
+void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandwith_scale) const {
     Size reconstructed_size((_offset_map->_width - 1 + _patch_size) * _scale,
                             (_offset_map->_height - 1 + _patch_size) * _scale);
     reconstructed = Mat::zeros(reconstructed_size, CV_32FC3);
@@ -82,7 +82,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed) const {
         const vector<Vec3f> one_pixel_colors = colors[i];
         Scalar mean, std;
         meanStdDev(one_pixel_colors, mean, std);
-        float sigma_mean_shift = (std[0] + std[1] + std[2]) / 3;
+        float sigma_mean_shift = (std[0] + std[1] + std[2]) / 3 * mean_shift_bandwith_scale;
 
         vector<Vec3f> modes;
         vector<int> mode_assignments;

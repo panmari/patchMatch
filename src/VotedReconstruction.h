@@ -15,7 +15,7 @@ public:
     VotedReconstruction(const OffsetMap *offset_map, const cv::Mat &source, const cv::Mat &source_grad_x,
                         const cv::Mat &source_grad_y, int patch_size, int scale = 1);
 
-    void reconstruct(cv::Mat &reconstructed) const;
+    void reconstruct(cv::Mat &reconstructed, float mean_shift_bandwith_scale) const;
 
 private:
     cv::Mat _source, _source_grad_x, _source_grad_y;

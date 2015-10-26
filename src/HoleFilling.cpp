@@ -102,8 +102,9 @@ Mat HoleFilling::run() {
             }
             VotedReconstruction vr(_offset_map_pyr[scale], source, rmp.getSourceGradientX(), rmp.getSourceGradientY(),
                                    _patch_size);
+            float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / EM_STEPS;
             Mat reconstructed;
-            vr.reconstruct(reconstructed);
+            vr.reconstruct(reconstructed, mean_shift_bandwith_scale);
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
             Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
             reconstructed.copyTo(_target_area_pyr[scale], write_back_mask);
@@ -127,7 +128,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         pmutil::computeGradientX(source, gx);
         pmutil::computeGradientY(source, gy);
         VotedReconstruction vr(previous_offset_map, source, gx, gy, _patch_size, 2);
-        vr.reconstruct(upscaled_target_area);
+        vr.reconstruct(upscaled_target_area, 3);
 
         // Cut out the needed portion of the upscaled target area by
         // projecting top left of previous target area to new scale, compute offset to needed top left.
