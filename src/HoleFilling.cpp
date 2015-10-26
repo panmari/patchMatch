@@ -72,7 +72,6 @@ Mat HoleFilling::run() {
             Mat initial_guess = source(low_res_target_rect).clone();
             initial_guess.setTo(mean_color, _hole_pyr[_nr_scales](low_res_target_rect));
             _target_area_pyr[_nr_scales] = initial_guess;
-
         } else {
             Mat upscaled_solution = upscaleSolution(scale);
             // Copy upscaled solution at hole region to current target area.
@@ -129,6 +128,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         pmutil::computeGradientX(source, gx);
         pmutil::computeGradientY(source, gy);
         VotedReconstruction vr(previous_offset_map, source, gx, gy, _patch_size, 2);
+        // TODO: Find out what mean shift scale works best here.
         vr.reconstruct(upscaled_target_area, 3);
 
         // Cut out the needed portion of the upscaled target area by

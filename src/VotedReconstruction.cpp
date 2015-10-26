@@ -82,7 +82,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
         const vector<Vec3f> one_pixel_colors = colors[i];
         Scalar mean, std;
         meanStdDev(one_pixel_colors, mean, std);
-        float sigma_mean_shift = (std[0] + std[1] + std[2]) / 3 * mean_shift_bandwith_scale;
+        float sigma_mean_shift = static_cast<float>(std[0] + std[1] + std[2]) / 3 * mean_shift_bandwith_scale;
 
         vector<Vec3f> modes;
         vector<int> mode_assignments;
@@ -105,7 +105,6 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
                 total_weight += weight;
             }
         }
-        // TODO: find out correct index in reconstruction, save final color divided by total weight there.
         int y = i / reconstructed_size.width;
         int x = i % reconstructed_size.width;
         reconstructed.at<Vec3f>(y, x) = final_color / total_weight;
