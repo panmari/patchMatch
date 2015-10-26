@@ -91,7 +91,8 @@ Mat HoleFilling::run() {
             }
             _offset_map_pyr[scale] = rmp.match();
             if (DUMP_INTERMEDIARY_RESULTS) {
-                cv::String modifier = str(format("scale_%d_iter_%02d") % scale % i);
+                const int scale_for_output = _nr_scales - scale;
+                cv::String modifier = str(format("scale_%d_iter_%02d") % scale_for_output % i);
                 Mat current_solution = solutionFor(scale);
                 pmutil::imwrite_lab("hole_filled_" + modifier + ".exr", current_solution);
                 // Dump nearest patches for every pixel in offset map

@@ -1,6 +1,7 @@
 #include "VotedReconstruction.h"
 #include "PoissonSolver.h"
 #include "util.h"
+#include <iostream>
 
 using cv::COLOR_GRAY2BGR;
 using cv::divide;
@@ -87,12 +88,11 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
         vector<Vec3f> modes;
         vector<int> mode_assignments;
         naiveMeanShift(one_pixel_colors, sigma_mean_shift, &modes, &mode_assignments);
-
         vector<int> occurences(modes.size(), 0);
         for (int assignment: mode_assignments) {
             occurences[assignment]++;
         }
-        // TODO: if only one mode is present, just take it as final color here.
+        // TODO: if only one mode is present, just take it as final color here (is not exactly the same, but close enough?).
         auto max_occurences_iter = std::max_element(occurences.begin(), occurences.end());
         long max_mode = std::distance(occurences.begin(), max_occurences_iter);
         const vector<float> one_pixel_weights = weights[i];
