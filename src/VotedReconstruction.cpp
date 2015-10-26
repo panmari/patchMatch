@@ -101,7 +101,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed) const {
             if (mode_assignments[color_idx] == max_mode) {
                 float weight = one_pixel_weights[color_idx];
                 final_color += one_pixel_colors[color_idx] * weight;
-                total_weight += total_weight;
+                total_weight += weight;
             }
         }
         // TODO: find out correct index in reconstruction, save final color divided by total weight there.
