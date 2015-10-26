@@ -62,8 +62,6 @@ void VotedReconstruction::reconstruct(Mat &reconstructed) const {
             else {
                 weight = 1;
             }
-            // Add to all pixels at once.
-            Rect current_patch_rect(x * _scale, y * _scale, _patch_size * _scale, _patch_size * _scale);
 
             for (int x_patch = 0; x_patch < _patch_size * _scale; x_patch++) {
                 for (int y_patch = 0; y_patch < _patch_size * _scale; y_patch++) {
@@ -95,7 +93,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed) const {
             occurences[assignment]++;
         }
         auto max_occurences_iter = std::max_element(occurences.begin(), occurences.end());
-        int max_mode = std::distance(mode_assignments.begin(), max_occurences_iter);
+        int max_mode = std::distance(occurences.begin(), max_occurences_iter);
         const vector<float> one_pixel_weights = weights[i];
         Vec3f final_color(0, 0, 0);
         double total_weight;

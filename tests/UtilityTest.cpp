@@ -60,6 +60,27 @@ TEST(utility_test, naive_mean_shift_with_two_very_different_colors_and_large_ker
         EXPECT_NEAR(mode[c], 35, 0.01);
     }
     EXPECT_EQ(mode_assignments[0], 0);
+    EXPECT_EQ(mode_assignments[1], 0);
+}
+
+TEST(utility_test, sigma_zero_should_work_for_only_one_color_given)
+{
+    vector<Vec3f> colors{Vec3f(20, 20, 20)};
+    float sigma = 0;
+
+    vector<Vec3f> modes;
+    vector<int> mode_assignments;
+
+    naiveMeanShift(colors, sigma, &modes, &mode_assignments);
+
+    EXPECT_EQ(modes.size(), 1);
+    EXPECT_EQ(mode_assignments.size(), 1);
+
+    Vec3f mode = modes[0];
+    for (int c = 0; c < 3; c++) {
+        EXPECT_NEAR(mode[c], 20, 0.01);
+    }
+    EXPECT_EQ(mode_assignments[0], 0);
 }
 
 TEST(utility_test, std_method_test)

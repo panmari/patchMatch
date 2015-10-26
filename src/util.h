@@ -132,8 +132,9 @@ namespace pmutil {
         }
     }
 
-    const double MIN_SHIFT_DISTANCE = 0.01;
-    const double MIN_CLUSTER_DISTANCE = 0.1;
+    constexpr double MIN_SHIFT_DISTANCE = 0.01;
+    constexpr double MIN_CLUSTER_DISTANCE = 0.1;
+    constexpr double EPSILON = 1e-6;
 
     /**
      * Does mean shift on the given colors with a gaussian kernel (using the given sigma).
@@ -155,7 +156,7 @@ namespace pmutil {
                 for (const Vec3f &other_color: colors) {
                     auto dir = center - other_color;
                     double dist = cv::norm(dir);
-                    double weight = exp(-dist / two_sigma_sqr);
+                    double weight = exp(-dist / (two_sigma_sqr + EPSILON));
                     new_center += weight * other_color;
                     total_weight += weight;
                 }
