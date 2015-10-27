@@ -47,7 +47,7 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
 }
 
 OffsetMap* RandomizedPatchMatch::match() {
-    RNG rng( 0xFFFFFFFF );
+    RNG rng(_target_updated_count);
 
     // Initialize with dummy offset map that will be deleted at the end of first iteration.
     OffsetMap *previous_offset_map = new OffsetMap(0, 0);
@@ -154,7 +154,6 @@ void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_rect,
             offset_map_entry->distance = ssd_value;
         }
     }
-
 }
 
 void RandomizedPatchMatch::setTargetArea(const cv::Mat &new_target_area) {
@@ -204,6 +203,7 @@ float RandomizedPatchMatch::patchDistance(const cv::Rect &source_rect, const cv:
     Mat target_patch = _target_pyr[scale](target_rect);
     double ssd = ssd_unsafe(source_patch, target_patch, previous_dist);
 
+    // Computation can be canceled early if distance is higher than previous distance (or gradients are not used).
     if (ssd > previous_dist || _lambda == 0)
         return static_cast<float>(ssd);
 

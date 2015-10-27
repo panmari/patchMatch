@@ -63,6 +63,14 @@ private:
     void updateOffsetMapEntryIfBetter(const cv::Rect &target_rect, const cv::Point &candidate_offset,
                                       const cv::Rect &candiadate_rect, const int scale,
                                       OffsetMapEntry *offset_map_entry) const;
+
+    /**
+     * Computes the distance of two patches. Patches have to be the same size on both images.
+     * Uses internally the parameter '_lambda' to weight distance of gradients.
+     * @param source_rect the position of the patch on the source image.
+     * @param target_rect the position of the patch on the target image.
+     * @param scale the scale that the rectangles reference to.
+     */
     float patchDistance(const cv::Rect &source_rect, const cv::Rect &target_rect, const int scale,
                         const float previous_dist = INFINITY) const;
 };
