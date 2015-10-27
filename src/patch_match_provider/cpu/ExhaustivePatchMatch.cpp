@@ -9,6 +9,7 @@ using cv::Point;
 using cv::Rect;
 using cv::Scalar;
 using cv::Vec3f;
+using std::shared_ptr;
 
 ExhaustivePatchMatch::ExhaustivePatchMatch(const Mat &source, const Mat &target, int patch_size,
                                            bool show_progress_bar) : _source(source), _target(target),
@@ -16,29 +17,29 @@ ExhaustivePatchMatch::ExhaustivePatchMatch(const Mat &source, const Mat &target,
     _temp.create(source.rows - _patch_size + 1, source.cols - _patch_size + 1, CV_32FC1);
 }
 
-OffsetMap* ExhaustivePatchMatch::match() {
-    Mat offset_map;
-	offset_map.create(_target.rows - _patch_size, _target.cols - _patch_size, CV_32FC3);
+shared_ptr<OffsetMap> ExhaustivePatchMatch::match() {
+    auto offset_map = shared_ptr<OffsetMap>(new OffsetMap(_target.cols - _patch_size + 1,
+                                                          _target.rows - _patch_size + 1));
 
-	const unsigned long matched_pixels = static_cast<unsigned long>(offset_map.cols * offset_map.rows);
+    const unsigned long matched_pixels = static_cast<unsigned long>(offset_map->_width * offset_map->_height);
 
     boost::iostreams::stream<boost::iostreams::null_sink> nullout { boost::iostreams::null_sink{} };
     std::ostream& out = _show_progress_bar ? std::cout : nullout;
     boost::progress_display show_progress(matched_pixels, out);
 
-	for (int x = 0; x < offset_map.cols; x++) {
-		for (int y = 0; y < offset_map.rows; y++) {
+    for (int x = 0; x < offset_map->_width; x++) {
+        for (int y = 0; y < offset_map->_height; y++) {
 			Rect rect(x, y, _patch_size, _patch_size);
             Mat patch = _target(rect);
-            double minVal; Point minLoc;
-            matchSinglePatch(patch, &minVal, &minLoc);
-			offset_map.at<Vec3f>(y, x) = Vec3f(minLoc.x - x, minLoc.y - y, static_cast<float>(minVal));
+            OffsetMapEntry *entry = offset_map->ptr(y, x);
+            double minVal; Point min_loc;
+            matchSinglePatch(patch, &minVal, &min_loc);
+            entry->distance = static_cast<float>(minVal);
+            entry->offset = Point(min_loc.x - x, min_loc.y - y);
         }
-        show_progress += offset_map.rows;
+        show_progress += offset_map->_width;
     }
-    //TODO: fix this.
-    OffsetMap* om = new OffsetMap(0,0);
-    return om;
+    return offset_map;
 }
 
 void ExhaustivePatchMatch::matchSinglePatch(const Mat &patch, double *minVal, Point *minLoc) const {

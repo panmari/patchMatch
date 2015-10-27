@@ -1,7 +1,8 @@
 #ifndef PATCHMATCH_EXHAUSTIVEPATCHMATCH_H
 #define PATCHMATCH_EXHAUSTIVEPATCHMATCH_H
 
-#include "opencv2/imgproc/imgproc.hpp"
+#include <memory>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "../PatchMatchProvider.h"
 
 class ExhaustivePatchMatch : public PatchMatchProvider {
@@ -9,7 +10,7 @@ class ExhaustivePatchMatch : public PatchMatchProvider {
 public:
 	ExhaustivePatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size,
                          bool show_progress_bar = false);
-    OffsetMap* match() override;
+    std::shared_ptr<OffsetMap> match() override;
 
 private:
     bool _show_progress_bar;
