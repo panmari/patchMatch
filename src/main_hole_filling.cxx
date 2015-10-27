@@ -4,6 +4,7 @@
 #include "util.h"
 #include <iostream>
 
+using cv::countNonZero;
 using cv::getTickCount;
 using cv::getTickFrequency;
 using cv::imread;
@@ -43,6 +44,7 @@ int main( int argc, char** argv )
     }    // For fast testing, make it tiny
     convert_for_computation(source, RESIZE_FACTOR);
 
+    cout << "# Hole pixels: " << countNonZero(hole_mask) << endl;
     double tic = double(getTickCount());
     HoleFilling hf(source, hole_mask, PATCH_SIZE);
     Mat filled = hf.run();
