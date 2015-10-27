@@ -94,12 +94,7 @@ Mat HoleFilling::run() {
                 cv::String modifier = str(format("scale_%d_iter_%02d_pd_%f") % scale_for_output % i % pd);
                 Mat current_solution = solutionFor(scale);
                 pmutil::imwrite_lab("hole_filled_" + modifier + ".exr", current_solution);
-                // Dump nearest patches for every pixel in offset map
-                // Mat img_bgr;
-                // cvtColor(source, img_bgr, CV_Lab2BGR);
-                //pmutil::dumpNearestPatches(_offset_map_pyr[scale], img_bgr, _patch_size, modifier);
             }
-            // TODO: do cleanup again.
             _offset_map_pyr[scale] = rmp.match();
             VotedReconstruction vr(_offset_map_pyr[scale], source,
                                    rmp.getSourceGradientX(), rmp.getSourceGradientY(),

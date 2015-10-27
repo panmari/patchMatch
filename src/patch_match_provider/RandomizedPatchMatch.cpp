@@ -23,7 +23,7 @@ using std::shared_ptr;
 /**
  * Number times propagation/random_search is executed for every patch per iteration.
  */
-constexpr int ITERATIONS_PER_SCALE = 9;
+constexpr int ITERATIONS_PER_SCALE = 5;
 /**
  * If true, does try to improve patches by doing random search. Else, only propagation is used. Default: true.
  */
@@ -112,6 +112,7 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
                     }
                     Rect target_patch_rect(x_unflipped, y_unflipped, _patch_size, _patch_size);
 
+                    // Propagate step, try offsets of neighboring entries for this one, apply if better.
                     if (x > 0) {
                         OffsetMapEntry offsetLeft = offset_map->at(y, x - 1);
                         Rect rectLeft(offsetLeft.offset.x + x_unflipped, offsetLeft.offset.y + y_unflipped,
@@ -125,7 +126,7 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
                         updateOffsetMapEntryIfBetter(target_patch_rect, offsetUp.offset, rectUp, scale, offset_map_entry);
                     }
 
-
+                    // Random search step, try out various locations all over the image that could be better.
                     if (RANDOM_SEARCH) {
                         Point current_offset = offset_map_entry->offset;
                         float current_search_radius = _max_search_radius;
