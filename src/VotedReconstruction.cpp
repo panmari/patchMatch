@@ -38,29 +38,34 @@ namespace {
                 const vector<Vec3f> one_pixel_colors = _colors[i];
                 Scalar mean, std;
                 meanStdDev(one_pixel_colors, mean, std);
-                float sigma_mean_shift = static_cast<float>(std[0] + std[1] + std[2]) / 3 * _mean_shift_bandwith_scale;
+                float avg_std_channels = static_cast<float>(std[0] + std[1] + std[2]) / 3;
+                float sigma_mean_shift =  avg_std_channels * _mean_shift_bandwith_scale;
 
-                vector<Vec3f> modes;
-                vector<int> mode_assignments;
-                naiveMeanShift(one_pixel_colors, sigma_mean_shift, &modes, &mode_assignments);
-                vector<int> occurences(modes.size(), 0);
-                for (int assignment: mode_assignments) {
-                    occurences[assignment]++;
-                }
-                // TODO: if only one mode is present, just take it as final color here (is not exactly the same, but close enough?).
-                auto max_occurences_iter = std::max_element(occurences.begin(), occurences.end());
-                long max_mode = std::distance(occurences.begin(), max_occurences_iter);
-                const vector<float> one_pixel_weights = _weights[i];
-                Vec3f final_color(0, 0, 0);
-                double total_weight = 0;
-                for (int color_idx = 0; color_idx < one_pixel_colors.size(); color_idx++) {
-                    if (mode_assignments[color_idx] == max_mode) {
-                        float weight = one_pixel_weights[color_idx];
-                        final_color += one_pixel_colors[color_idx] * weight;
-                        total_weight += weight;
+                if (avg_std_channels > 0.1f) {
+                    vector<Vec3f> modes;
+                    vector<int> mode_assignments;
+                    naiveMeanShift(one_pixel_colors, sigma_mean_shift, &modes, &mode_assignments);
+                    vector<int> occurrences(modes.size(), 0);
+                    for (int assignment: mode_assignments) {
+                        occurrences[assignment]++;
                     }
+                    auto max_occurences_iter = std::max_element(occurrences.begin(), occurrences.end());
+                    long max_mode = std::distance(occurrences.begin(), max_occurences_iter);
+                    const vector<float> one_pixel_weights = _weights[i];
+                    Vec3f final_color(0, 0, 0);
+                    double total_weight = 0;
+                    for (int color_idx = 0; color_idx < one_pixel_colors.size(); color_idx++) {
+                        if (mode_assignments[color_idx] == max_mode) {
+                            float weight = one_pixel_weights[color_idx];
+                            final_color += one_pixel_colors[color_idx] * weight;
+                            total_weight += weight;
+                        }
+                    }
+                    _reconstructed_flat->at<Vec3f>(i) = final_color / total_weight;
+                } else {
+                    // If there is not much variance, there is no need to do voting, simply take first color.
+                    _reconstructed_flat->at<Vec3f>(i) = one_pixel_colors[0];
                 }
-                _reconstructed_flat->at<Vec3f>(i) = final_color / total_weight;
             }
         }
     };
