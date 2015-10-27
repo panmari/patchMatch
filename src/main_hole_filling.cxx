@@ -1,8 +1,9 @@
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "HoleFilling.h"
 #include "util.h"
 #include <iostream>
+#include <gperftools/profiler.h>
 
 using cv::countNonZero;
 using cv::getTickCount;
@@ -45,10 +46,13 @@ int main( int argc, char** argv )
     convert_for_computation(source, RESIZE_FACTOR);
 
     cout << "# Hole pixels: " << countNonZero(hole_mask) << endl;
+
+    ProfilerStart;
     double tic = double(getTickCount());
     HoleFilling hf(source, hole_mask, PATCH_SIZE);
     Mat filled = hf.run();
     double toc = (double(getTickCount() - tic)) * 1000. / getTickFrequency();
+    ProfilerStop();
 
     imwrite_lab("result.exr", filled);
 

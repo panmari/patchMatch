@@ -2,7 +2,7 @@
 #define PATCHMATCH_VOTEDRECONSTRUCTION_H
 
 #include <memory>
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 #include "OffsetMap.h"
 
 class VotedReconstruction {

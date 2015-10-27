@@ -3,7 +3,7 @@
 #ifndef PATCHMATCH_POISSON_H
 #define PATCHMATCH_POISSON_H
 
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 
 using cv::filter2D;
 using cv::Mat;

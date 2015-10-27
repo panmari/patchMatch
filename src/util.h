@@ -1,9 +1,9 @@
 #ifndef PATCHMATCH_UTIL_H
 #define PATCHMATCH_UTIL_H
 
-#include "boost/format.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <boost/format.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
 namespace pmutil {

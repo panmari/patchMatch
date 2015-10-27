@@ -1,11 +1,10 @@
-//
-// Created by panmari on 02.10.15.
-//
-
+// Implements randomized patch match, as described in
+// PatchMatch: A Randomized Correspondence Algorithm for Structural Image Editing
+// by Barnes et al.
 #ifndef PATCHMATCH_RANDOMIZEDPATCHMATCH_H
 #define PATCHMATCH_RANDOMIZEDPATCHMATCH_H
 
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 #include "PatchMatchProvider.h"
 #include "../OffsetMap.h"
 

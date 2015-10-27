@@ -1,7 +1,7 @@
 #ifndef PATCHMATCH_OFFSETMAP_H
 #define PATCHMATCH_OFFSETMAP_H
 
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 
 
 class OffsetMapEntry {

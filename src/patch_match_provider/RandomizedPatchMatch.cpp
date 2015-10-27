@@ -1,5 +1,5 @@
 #include "RandomizedPatchMatch.h"
-#include "opencv2/highgui/highgui.hpp"
+#include <opencv2/highgui/highgui.hpp>
 #include "../util.h"
 #include <iostream>
 
