@@ -85,14 +85,13 @@ Mat HoleFilling::run() {
         source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
         RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size, 0);
         for (int i = 0; i < EM_STEPS; i++) {
-            if (i > 0) {
-                // Delete previous offset map.
-                delete (_offset_map_pyr[scale]);
-            }
-            _offset_map_pyr[scale] = rmp.match();
             if (DUMP_INTERMEDIARY_RESULTS) {
+                double pd = 0;
+                if (i > 0) {
+                    pd = _offset_map_pyr[scale]->summedDistance();
+                }
                 const int scale_for_output = _nr_scales - scale;
-                cv::String modifier = str(format("scale_%d_iter_%02d") % scale_for_output % i);
+                cv::String modifier = str(format("scale_%d_iter_%02d_pd_%f") % scale_for_output % i % pd);
                 Mat current_solution = solutionFor(scale);
                 pmutil::imwrite_lab("hole_filled_" + modifier + ".exr", current_solution);
                 // Dump nearest patches for every pixel in offset map
@@ -100,6 +99,13 @@ Mat HoleFilling::run() {
                 // cvtColor(source, img_bgr, CV_Lab2BGR);
                 //pmutil::dumpNearestPatches(_offset_map_pyr[scale], img_bgr, _patch_size, modifier);
             }
+            // TODO: do cleanup again.
+            /*
+            if (i > 0) {
+                // Delete previous offset map.
+                delete (_offset_map_pyr[scale]);
+            } */
+            _offset_map_pyr[scale] = rmp.match();
             VotedReconstruction vr(_offset_map_pyr[scale], source,
                                    rmp.getSourceGradientX(), rmp.getSourceGradientY(),
                                    _patch_size);

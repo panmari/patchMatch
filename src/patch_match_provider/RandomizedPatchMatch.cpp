@@ -22,13 +22,13 @@ using pmutil::computeGradientY;
 /**
  * Number times propagation/random_search is executed for every patch per iteration.
  */
-const int ITERATIONS_PER_SCALE = 5;
+constexpr int ITERATIONS_PER_SCALE = 9;
 /**
  * If true, does try to improve patches by doing random search. Else, only propagation is used. Default: true.
  */
-const bool RANDOM_SEARCH = true;
-const bool MERGE_UPSAMPLED_OFFSETS = true;
-const float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
+constexpr bool RANDOM_SEARCH = true;
+constexpr bool MERGE_UPSAMPLED_OFFSETS = true;
+constexpr float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
 RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda) :
         _patch_size(patch_size), _max_search_radius(max(target.cols, target.rows)),
@@ -64,6 +64,7 @@ OffsetMap* RandomizedPatchMatch::match() {
             // After half the iterations, merge the lower resolution offset where they're better.
             // This has to be done in an 'even' iteration because of the flipping.
             if (MERGE_UPSAMPLED_OFFSETS && scale != _nr_scales && i == ITERATIONS_PER_SCALE / 2) {
+                assert(!offset_map->isFlipped());
                 for (int x = 0; x < previous_offset_map->_width; x++) {
                     for (int y = 0; y < previous_offset_map->_height; y++) {
                         // Only check one corresponding pixel, will get propagated to adjacent pixels.
@@ -73,12 +74,27 @@ OffsetMap* RandomizedPatchMatch::match() {
                         Rect candidate_rect((lower_offset.x + x) * 2, (lower_offset.y + y) * 2,
                                             _patch_size, _patch_size);
                         Rect current_patch_rect(x * 2, y * 2, _patch_size, _patch_size);
-                        OffsetMapEntry* current_offset = offset_map->ptr(y * 2, x * 2);
+                        OffsetMapEntry *current_offset = offset_map->ptr(y * 2, x * 2);
                         updateOffsetMapEntryIfBetter(current_patch_rect, candidate_offset,
                                                      candidate_rect, scale, current_offset);
                     }
                 }
+                // If we're on full resolution and have a previous solution, try to merge it.
+                if (scale == 0 && _previous_solution != nullptr) {
+                    for (int x = 0; x < _previous_solution->_width; x++) {
+                        for (int y = 0; y < _previous_solution->_height; y++) {
+                            Point lower_offset = _previous_solution->at(y, x).offset;
+                            Rect candidate_rect(lower_offset.x + x, lower_offset.y + y,
+                                                _patch_size, _patch_size);
+                            Rect current_patch_rect(x, y, _patch_size, _patch_size);
+                            OffsetMapEntry *current_offset = offset_map->ptr(y, x);
+                            updateOffsetMapEntryIfBetter(current_patch_rect, lower_offset,
+                                                         candidate_rect, scale, current_offset);
+                        }
+                    }
+                }
             }
+
             for (int x = 0; x < offset_map->_width; x++) {
                 for (int y = 0; y < offset_map->_height; y++) {
                     OffsetMapEntry *offset_map_entry = offset_map->ptr(y, x);
@@ -127,7 +143,6 @@ OffsetMap* RandomizedPatchMatch::match() {
                     }
                 }
             }
-            // dumpOffsetMapToFile(offset_map, "_scale_" + std::to_string(s) + "_i_" + std::to_string(i));
             // Every second iteration, we go the other way round (start at bottom, propagate from right and down).
             // This effect can be achieved by flipping the matrix after every iteration.
             offset_map->flip();
@@ -139,6 +154,7 @@ OffsetMap* RandomizedPatchMatch::match() {
         delete previous_offset_map;
         previous_offset_map = offset_map;
     }
+    _previous_solution = previous_offset_map;
     return previous_offset_map;
 }
 
@@ -193,8 +209,8 @@ void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, co
 }
 
 int RandomizedPatchMatch::findNumberScales(const Mat &source, const Mat &target, int patch_size) const {
-    int min_dimension = std::min(std::min(std::min(source.cols, source.rows), target.cols), target.rows);
-    return (int) log2( min_dimension/ (2.f * patch_size));
+    double min_dimension = std::min(std::min(std::min(source.cols, source.rows), target.cols), target.rows);
+    return cvFloor(log2( min_dimension / patch_size));
 }
 
 float RandomizedPatchMatch::patchDistance(const cv::Rect &source_rect, const cv::Rect &target_rect, const int scale,

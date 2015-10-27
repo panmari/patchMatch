@@ -45,6 +45,7 @@ private:
      * Used for initializing RNG independently over multiple EM runs.
      */
     int _target_updated_count = 0;
+    OffsetMap *_previous_solution = nullptr;
 
     /* Mainly for debugging, dumps offset map to file. */
     void dumpOffsetMapToFile(cv::Mat &offset_map, cv::String filename_modifier) const;
