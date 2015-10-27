@@ -23,7 +23,7 @@ LIST(APPEND patch_match_source ${additional_patch_match_source})
 
 
 add_library(patch_match_lib ${patch_match_source})
-target_link_libraries(patch_match_lib ${OpenCV_LIBS} ${Boost_LIBRARIES} profiler)
+target_link_libraries(patch_match_lib ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 add_executable(reconstruction src/main_reconstruction.cxx)
 target_link_libraries(reconstruction patch_match_lib)
