@@ -11,6 +11,7 @@ using cv::Rect;
 using cv::Size;
 using cv::Vec3f;
 using pmutil::naiveMeanShift;
+using std::shared_ptr;
 using std::vector;
 
 /**
@@ -65,7 +66,7 @@ namespace {
     };
 }
 
-VotedReconstruction::VotedReconstruction(const OffsetMap *offset_map, const Mat &source, const Mat &source_grad_x,
+VotedReconstruction::VotedReconstruction(const shared_ptr<OffsetMap> offset_map, const Mat &source, const Mat &source_grad_x,
                                          const Mat &source_grad_y, int patch_size, int scale) :
         _offset_map(offset_map), _source(source), _source_grad_x(source_grad_x), _source_grad_y(source_grad_y),
         _patch_size(patch_size), _scale(scale) {

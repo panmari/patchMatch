@@ -15,6 +15,7 @@ using cv::Rect;
 using cv::Scalar;
 using cv::Vec3f;
 using pmutil::convert_for_computation;
+using std::shared_ptr;
 
 const double EPSILON = 1e-3;
 
@@ -24,10 +25,8 @@ TEST(randomized_patch_match_test, on_two_identical_trivial_images)
     Mat img2 = Mat::ones(20, 20, CV_32FC1);
 
     RandomizedPatchMatch rpm(img1, img2, 7, 0);
-    OffsetMap* diff = rpm.match();
+    shared_ptr<OffsetMap> diff = rpm.match();
     double overall_ssd = diff->summedDistance();
-
-    delete(diff);
 
     ASSERT_NEAR(0.0, overall_ssd, EPSILON);
 }
@@ -39,9 +38,8 @@ TEST(randomized_patch_match_test, on_two_very_different_trivial_images)
 
     int patch_size = 7;
     RandomizedPatchMatch rpm(img1, img2, patch_size, 0.f);
-    OffsetMap* diff = rpm.match();
+    shared_ptr<OffsetMap> diff = rpm.match();
     double overall_ssd = diff->summedDistance();
-    delete(diff);
 
     // We expect for every patch (size - patch_size)^2 the maximum deviation of 7*7 (every pixel has SSD 1)
     int error_per_patch = patch_size * patch_size;
@@ -57,7 +55,7 @@ TEST(randomized_patch_match_test, all_offsets_inside_image_on_random_images)
     randu(img2, Scalar::all(0.0), Scalar::all(1.0f));
 
     RandomizedPatchMatch rpm(img1, img2, 7);
-    OffsetMap* diff = rpm.match();
+    shared_ptr<OffsetMap> diff = rpm.match();
     for (int x = 0; x < diff->_width; x++) {
         for (int y = 0; y < diff->_height; y++) {
             OffsetMapEntry d = diff->at(y, x);
@@ -69,7 +67,6 @@ TEST(randomized_patch_match_test, all_offsets_inside_image_on_random_images)
             ASSERT_LT(matching_patch_y, img2.rows) << "Failed for offset in (" << x << "," << y << ")";
         }
     }
-    delete(diff);
 }
 
 TEST(randomized_patch_match_test, images_with_displaced_rectangles_should_produce_little_dist)
@@ -83,14 +80,13 @@ TEST(randomized_patch_match_test, images_with_displaced_rectangles_should_produc
     img2(Rect(20, 25, 5, 5)) = 0;
 
     RandomizedPatchMatch rpm(img1, img2, 7);
-    OffsetMap* diff = rpm.match();
+    shared_ptr<OffsetMap> diff = rpm.match();
     imwrite("offset_map_visualized.exr", diff->toColorCodedImage());
     imwrite("dist_img.exr", diff->getDistanceImage());
 
     double overall_ssd = diff->summedDistance();
     double expected_ssd = 0;
     ASSERT_NEAR(expected_ssd, overall_ssd, EPSILON);
-    delete(diff);
 }
 
 
@@ -104,10 +100,10 @@ TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
 	pmutil::convert_for_computation(target, resize_factor);
 	const int patch_size = 7;
 	RandomizedPatchMatch rpm(source, target, patch_size, 0);
-    OffsetMap* diff_rpm = rpm.match();
+    shared_ptr<OffsetMap> diff_rpm = rpm.match();
 
 	ExhaustivePatchMatch epm(source, target, patch_size);
-    OffsetMap* diff_epm = epm.match();
+    shared_ptr<OffsetMap> diff_epm = epm.match();
 
 	const int nr_pixels = target.cols * target.rows;
 	double mean_ssd_rpm = diff_rpm->summedDistance() / nr_pixels;
@@ -117,6 +113,4 @@ TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
 	// This is in L*a*b* space, so the errors are quite high.
 	ASSERT_GT(mean_ssd_rpm, mean_ssd_epm);
 	ASSERT_NEAR(mean_ssd_rpm, mean_ssd_epm, 1000);
-    delete(diff_rpm);
-    delete(diff_epm);
 }

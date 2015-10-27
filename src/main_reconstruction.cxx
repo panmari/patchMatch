@@ -22,6 +22,7 @@ using pmutil::convert_for_computation;
 using pmutil::ssd;
 using std::cout;
 using std::endl;
+using std::shared_ptr;
 
 const float RESIZE_FACTOR = 0.5;
 const int PATCH_SIZE = 7;
@@ -50,7 +51,7 @@ int main( int argc, char** argv )
 
     RandomizedPatchMatch rpm(source, target, PATCH_SIZE);
 
-    OffsetMap *offset_map = rpm.match();
+    shared_ptr<OffsetMap> offset_map = rpm.match();
 
     TrivialReconstruction tr(offset_map, source, PATCH_SIZE);
     Mat reconstructed = tr.reconstruct();

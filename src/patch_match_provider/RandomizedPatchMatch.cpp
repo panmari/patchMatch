@@ -14,10 +14,11 @@ using cv::String;
 using cv::Rect;
 using cv::RNG;
 using cv::Vec3f;
-using std::max;
 using pmutil::ssd_unsafe;
 using pmutil::computeGradientX;
 using pmutil::computeGradientY;
+using std::max;
+using std::shared_ptr;
 
 /**
  * Number times propagation/random_search is executed for every patch per iteration.
@@ -46,7 +47,7 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
     setTargetArea(target);
 }
 
-OffsetMap* RandomizedPatchMatch::match() {
+shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
     RNG rng(_target_updated_count);
 
     // Initialize with dummy offset map that will be deleted at the end of first iteration.
@@ -154,8 +155,8 @@ OffsetMap* RandomizedPatchMatch::match() {
         delete previous_offset_map;
         previous_offset_map = offset_map;
     }
-    _previous_solution = previous_offset_map;
-    return previous_offset_map;
+    _previous_solution = shared_ptr<OffsetMap>(previous_offset_map);
+    return _previous_solution;
 }
 
 void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_rect, const Point &candidate_offset,

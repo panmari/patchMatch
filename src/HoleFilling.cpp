@@ -100,11 +100,6 @@ Mat HoleFilling::run() {
                 //pmutil::dumpNearestPatches(_offset_map_pyr[scale], img_bgr, _patch_size, modifier);
             }
             // TODO: do cleanup again.
-            /*
-            if (i > 0) {
-                // Delete previous offset map.
-                delete (_offset_map_pyr[scale]);
-            } */
             _offset_map_pyr[scale] = rmp.match();
             VotedReconstruction vr(_offset_map_pyr[scale], source,
                                    rmp.getSourceGradientX(), rmp.getSourceGradientY(),
@@ -118,9 +113,6 @@ Mat HoleFilling::run() {
             rmp.setTargetArea(_target_area_pyr[scale]);
         }
     }
-    for (OffsetMap *offset_map :_offset_map_pyr) {
-        delete(offset_map);
-    }
     return solutionFor(0);
 }
 
@@ -129,7 +121,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
     if (WEXLER_UPSCALE) {
         // Better method for upscaling, see Wexler2007 Section 3.2
         int previous_scale = current_scale + 1;
-        OffsetMap *previous_offset_map = _offset_map_pyr[previous_scale];
+        auto previous_offset_map = _offset_map_pyr[previous_scale];
         Mat source = _img_pyr[current_scale];
         Mat gx, gy;
         pmutil::computeGradientX(source, gx);

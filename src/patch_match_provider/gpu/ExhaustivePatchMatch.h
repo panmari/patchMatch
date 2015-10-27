@@ -10,7 +10,7 @@ class ExhaustivePatchMatch : public PatchMatchProvider {
 
 public:
 	ExhaustivePatchMatch(cv::Mat &source, cv::Mat &target, int patch_size, bool show_progress_bar = false);
-    OffsetMap* match();
+    std::shared_ptr<OffsetMap> match();
 
 private:
     bool _show_progress_bar;

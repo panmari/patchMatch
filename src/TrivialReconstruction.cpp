@@ -4,8 +4,9 @@
 using cv::Mat;
 using cv::Rect;
 using cv::Vec3f;
+using std::shared_ptr;
 
-TrivialReconstruction::TrivialReconstruction(const OffsetMap *offset_map, const Mat &source_img, const int patch_size) :
+TrivialReconstruction::TrivialReconstruction(const shared_ptr<OffsetMap>offset_map, const Mat &source_img, const int patch_size) :
         _offset_map(offset_map), _source_img(source_img), _patch_size(patch_size) { }
 
 Mat TrivialReconstruction::reconstruct() const {

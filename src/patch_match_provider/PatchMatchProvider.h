@@ -6,10 +6,11 @@
 #define PATCHMATCH_PATCHMATCHPROVIDER_H
 
 
+#include <memory>
 #include "../OffsetMap.h"
 
 class PatchMatchProvider {
 public:
-    virtual OffsetMap* match() = 0;
+    virtual std::shared_ptr<OffsetMap> match() = 0;
 };
 #endif //PATCHMATCH_PATCHMATCHPROVIDER_H

@@ -13,7 +13,7 @@ class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
     RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda = 0.5f);
-    OffsetMap* match() override;
+    std::shared_ptr<OffsetMap> match() override;
 
     /* Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
      * their minimal dimension.
@@ -45,7 +45,7 @@ private:
      * Used for initializing RNG independently over multiple EM runs.
      */
     int _target_updated_count = 0;
-    OffsetMap *_previous_solution = nullptr;
+    std::shared_ptr<OffsetMap> _previous_solution = nullptr;
 
     /* Mainly for debugging, dumps offset map to file. */
     void dumpOffsetMapToFile(cv::Mat &offset_map, cv::String filename_modifier) const;

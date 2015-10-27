@@ -1,6 +1,7 @@
 #ifndef PATCHMATCH_TRIVIALRECONSTRUCTION_H
 #define PATCHMATCH_TRIVIALRECONSTRUCTION_H
 
+#include <memory>
 #include "opencv2/imgproc/imgproc.hpp"
 #include "OffsetMap.h"
 
@@ -15,10 +16,10 @@ public:
      * the y-channel being the y-offset.
      * The patch image is assumed to be the one referenced in offset_map.
      */
-    TrivialReconstruction(const OffsetMap *offset_map, const cv::Mat &source_img, const int patch_size);
+    TrivialReconstruction(const std::shared_ptr<OffsetMap> offset_map, const cv::Mat &source_img, const int patch_size);
     cv::Mat reconstruct() const;
 private:
-    const OffsetMap *_offset_map;
+    const std::shared_ptr<OffsetMap> _offset_map;
     const cv::Mat _source_img;
     int _patch_size;
 };

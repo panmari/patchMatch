@@ -9,6 +9,7 @@ using cv::Point;
 using cv::Rect;
 using cv::Scalar;
 using cv::Vec3f;
+using std::shared_ptr;
 
 ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &source, Mat &target, int patch_size, bool show_progress_bar) :
         _patch_size(patch_size), _show_progress_bar(show_progress_bar) {
@@ -18,8 +19,9 @@ ExhaustivePatchMatch::ExhaustivePatchMatch(Mat &source, Mat &target, int patch_s
     _temp.create(_source.rows - _patch_size + 1, _source.cols - _patch_size + 1, CV_32FC1);
 }
 
-OffsetMap* ExhaustivePatchMatch::match() {
-    OffsetMap* offset_map = new OffsetMap(_target.cols - _patch_size + 1, _target.rows - _patch_size + 1);
+shared_ptr<OffsetMap> ExhaustivePatchMatch::match() {
+    auto offset_map = shared_ptr<OffsetMap>(new OffsetMap(_target.cols - _patch_size + 1,
+                                                          _target.rows - _patch_size + 1));
 
 	const unsigned long matched_pixels = static_cast<unsigned long>(offset_map->_width * offset_map->_height);
 
