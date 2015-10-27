@@ -15,7 +15,7 @@ before_script:
   - git clone https://github.com/Itseez/opencv.git
   - mkdir -p opencv_build
   - cd opencv_build
-  - cmake -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -D BUILD_opencv_java=OFF -D BUILD_opencv_java=OFF ../opencv
+  - cmake -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -D BUILD_opencv_java=OFF -D BUILD_opencv_java=OFF -D BUILD_opencv_video=OFF -D BUILD_opencv_objdetect=OFF -D BUILD_opencv_calib3d=OFF ../opencv
   - make -j8
   - sudo make -j8 install
   - cd ..
