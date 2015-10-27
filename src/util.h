@@ -11,6 +11,7 @@ namespace pmutil {
     using boost::format;
     using cv::imwrite;
     using cv::Mat;
+    using cv::Matx;
     using cv::Rect;
     using cv::Scalar;
     using cv::Size;
@@ -161,14 +162,14 @@ namespace pmutil {
                     total_weight += weight;
                 }
                 new_center /= total_weight;
-                if (cv::norm(new_center, center) < MIN_SHIFT_DISTANCE)
+                if (norm(new_center, center) < MIN_SHIFT_DISTANCE)
                     break;
                 center = new_center;
             }
             bool create_mode = true;
             for (int i = 0; i < modes->size(); i++) {
                 const Vec3f &mode = modes->at(i);
-                if (cv::norm(center, mode) < MIN_CLUSTER_DISTANCE) {
+                if (norm(center, mode) < MIN_CLUSTER_DISTANCE) {
                     mode_assignments->push_back(i);
                     create_mode = false;
                     break;
