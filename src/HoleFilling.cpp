@@ -96,9 +96,7 @@ Mat HoleFilling::run() {
                 pmutil::imwrite_lab("hole_filled_" + modifier + ".exr", current_solution);
             }
             _offset_map_pyr[scale] = rmp.match();
-            VotedReconstruction vr(_offset_map_pyr[scale], source,
-                                   rmp.getSourceGradientX(), rmp.getSourceGradientY(),
-                                   _patch_size);
+            VotedReconstruction vr(_offset_map_pyr[scale], source, _patch_size);
             float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / (EM_STEPS - 1);
             Mat reconstructed;
             vr.reconstruct(reconstructed, mean_shift_bandwith_scale);
@@ -118,10 +116,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         int previous_scale = current_scale + 1;
         auto previous_offset_map = _offset_map_pyr[previous_scale];
         Mat source = _img_pyr[current_scale];
-        Mat gx, gy;
-        pmutil::computeGradientX(source, gx);
-        pmutil::computeGradientY(source, gy);
-        VotedReconstruction vr(previous_offset_map, source, gx, gy, _patch_size, 2);
+        VotedReconstruction vr(previous_offset_map, source, _patch_size, 2);
         // TODO: Find out what mean shift scale works best here.
         vr.reconstruct(upscaled_target_area, 3);
 
