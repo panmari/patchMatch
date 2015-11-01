@@ -102,15 +102,11 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
                     // Propagate step, try offsets of neighboring entries for this one, apply if better.
                     if (x > 0) {
                         OffsetMapEntry offsetLeft = offset_map->at(y, x - 1);
-                        Rect rectLeft(offsetLeft.offset.x + x_unflipped, offsetLeft.offset.y + y_unflipped,
-                                      _patch_size, _patch_size);
-                        updateOffsetMapEntryIfBetter(target_patch_rect, offsetLeft.offset, rectLeft, scale, offset_map_entry);
+                        updateOffsetMapEntryIfBetter(target_patch_rect, offsetLeft.offset, scale, offset_map_entry);
                     }
                     if (y > 0) {
                         OffsetMapEntry offsetUp = offset_map->at(y - 1, x);
-                        Rect rectUp(offsetUp.offset.x + x_unflipped, offsetUp.offset.y + y_unflipped,
-                                    _patch_size, _patch_size);
-                        updateOffsetMapEntryIfBetter(target_patch_rect, offsetUp.offset, rectUp, scale, offset_map_entry);
+                        updateOffsetMapEntryIfBetter(target_patch_rect, offsetUp.offset, scale, offset_map_entry);
                     }
 
                     // Random search step, try out various locations all over the image that could be better.
@@ -121,11 +117,8 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
                             Point random_point = Point(cvRound(rng.uniform(-1.f, 1.f) * current_search_radius),
                                                        cvRound(rng.uniform(-1.f, 1.f) * current_search_radius));
                             Point random_offset = current_offset + random_point;
-                            Rect random_rect(x_unflipped + random_offset.x,
-                                             y_unflipped + random_offset.y, _patch_size, _patch_size);
 
-                            updateOffsetMapEntryIfBetter(target_patch_rect, random_offset, random_rect, scale,
-                                                         offset_map_entry);
+                            updateOffsetMapEntryIfBetter(target_patch_rect, random_offset, scale, offset_map_entry);
 
                             current_search_radius *= ALPHA;
                         }
@@ -148,9 +141,10 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
 }
 
 void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_patch_rect, const Point &candidate_offset,
-                                                        const Rect &candidate_rect, const int scale,
-                                                        OffsetMapEntry *offset_map_entry) const {
+                                                        const int scale, OffsetMapEntry *offset_map_entry) const {
     // Check if it's fully inside, only try to update then.
+    const Rect candidate_rect(target_patch_rect.tl() + candidate_offset,
+                              Size(_patch_size, _patch_size));
     if ((_source_rect_pyr[scale] & candidate_rect) == candidate_rect) {
         float previous_distance = offset_map_entry->distance;
 		float ssd_value = patchDistance(candidate_rect, target_patch_rect, scale, previous_distance);

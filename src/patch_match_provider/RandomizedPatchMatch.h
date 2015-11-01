@@ -28,8 +28,7 @@ public:
     * 'source_img' is a better match than for the given 'patch'.
     */
     void updateOffsetMapEntryIfBetter(const cv::Rect &target_patch_rect, const cv::Point &candidate_offset,
-                                      const cv::Rect &candidate_rect, const int scale,
-                                      OffsetMapEntry *offset_map_entry) const;
+                                      const int scale, OffsetMapEntry *offset_map_entry) const;
 private:
     std::vector<cv::Mat> _source_pyr, _target_pyr;
 

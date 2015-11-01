@@ -31,11 +31,9 @@ public:
                 Point other_offset = _other_offset_map.at(y, x).offset * _scale_difference;
                 Point offset_map_at(x * _scale_difference, y * _scale_difference);
                 Rect target_patch_rect(offset_map_at, sz);
-                Rect other_rect(offset_map_at + other_offset, sz);
                 OffsetMapEntry *current_offset = _offset_map.ptr(y * _scale_difference,
                                                                  x * _scale_difference);
-                _rmp.updateOffsetMapEntryIfBetter(target_patch_rect, other_offset,
-                                                  other_rect, _current_scale, current_offset);
+                _rmp.updateOffsetMapEntryIfBetter(target_patch_rect, other_offset, _current_scale, current_offset);
             }
         }
     }
