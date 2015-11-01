@@ -132,7 +132,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
         }
     }
     Mat reconstructed_flat = reconstructed.reshape(3, 1);
-    parallel_for_(cv::Range(0, colors.size() - 1),
+    parallel_for_(cv::Range(0, colors.size()),
                   ParallelModeAwareReconstruction(colors, weights, mean_shift_bandwith_scale, &reconstructed_flat));
     // Divide every channel by count (reproduce counts on 3 channels first).
     /*

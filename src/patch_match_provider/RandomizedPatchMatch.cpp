@@ -8,17 +8,52 @@ using cv::buildPyramid;
 using cv::flip;
 using cv::Mat;
 using cv::Point;
+using cv::Range;
+using cv::Rect;
+using cv::RNG;
 using cv::Scalar;
 using cv::Size;
 using cv::String;
-using cv::Rect;
-using cv::RNG;
 using cv::Vec3f;
 using pmutil::ssd_unsafe;
 using pmutil::computeGradientX;
 using pmutil::computeGradientY;
 using std::max;
 using std::shared_ptr;
+
+namespace {
+    class ParallelMergeOffsetMaps : public cv::ParallelLoopBody {
+    private:
+        const OffsetMap &_other_offset_map;
+        const int _scale_difference, _patch_size, _current_scale;
+        OffsetMap &_offset_map;
+        RandomizedPatchMatch &_rmp;
+
+    public:
+        ParallelMergeOffsetMaps(const OffsetMap &other_offset_map, const int scale_difference,
+                                const int patch_size, const int current_scale,
+                                RandomizedPatchMatch &rmp, OffsetMap &offset_map)
+                : _other_offset_map(other_offset_map), _current_scale(current_scale),
+                  _scale_difference(scale_difference), _patch_size(patch_size),
+                  _rmp(rmp), _offset_map(offset_map) { }
+
+        virtual void operator()(const cv::Range &r) const {
+            Size sz(_patch_size, _patch_size);
+            for (int x = r.start; x < r.end; x++) {
+                for (int y = 0; y < _other_offset_map._height; y++) {
+                    Point other_offset = _other_offset_map.at(y, x).offset * _scale_difference;
+                    Point offset_map_at(x * _scale_difference, y * _scale_difference);
+                    Rect target_patch_rect(offset_map_at, sz);
+                    Rect other_rect(other_offset, sz);
+                    OffsetMapEntry *current_offset = _offset_map.ptr(y * _scale_difference,
+                                                                     x * _scale_difference);
+                    _rmp.updateOffsetMapEntryIfBetter(target_patch_rect, other_offset,
+                                                      other_rect, _current_scale, current_offset);
+                }
+            }
+        }
+    };
+}
 
 /**
  * Number times propagation/random_search is executed for every patch per iteration.
@@ -51,7 +86,7 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
     RNG rng(_target_updated_count);
 
     // Initialize with dummy offset map that will be deleted at the end of first iteration.
-    OffsetMap *previous_offset_map = new OffsetMap(0, 0);
+    OffsetMap *previous_scale_offset_map = new OffsetMap(0, 0);
     for (int scale = _nr_scales; scale >= 0; scale--) {
         Mat source = _source_pyr[scale];
         Mat target = _target_pyr[scale];
@@ -66,33 +101,17 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
             // This has to be done in an 'even' iteration because of the flipping.
             if (MERGE_UPSAMPLED_OFFSETS && scale != _nr_scales && i == ITERATIONS_PER_SCALE / 2) {
                 assert(!offset_map->isFlipped());
-                for (int x = 0; x < previous_offset_map->_width; x++) {
-                    for (int y = 0; y < previous_offset_map->_height; y++) {
-                        // Only check one corresponding pixel, will get propagated to adjacent pixels.
-                        // TODO: Check 4 corresponding pixels in higher resolution offset image.
-                        Point lower_offset = previous_offset_map->at(y, x).offset;
-                        Point candidate_offset = lower_offset * 2;
-                        Rect candidate_rect((lower_offset.x + x) * 2, (lower_offset.y + y) * 2,
-                                            _patch_size, _patch_size);
-                        Rect current_patch_rect(x * 2, y * 2, _patch_size, _patch_size);
-                        OffsetMapEntry *current_offset = offset_map->ptr(y * 2, x * 2);
-                        updateOffsetMapEntryIfBetter(current_patch_rect, candidate_offset,
-                                                     candidate_rect, scale, current_offset);
-                    }
-                }
-                // If we're on full resolution and have a previous solution, try to merge it.
+                parallel_for_(cv::Range(0, previous_scale_offset_map->_width),
+                              ParallelMergeOffsetMaps(*previous_scale_offset_map, 2, _patch_size, scale,
+                                                      *this, *offset_map));
+
+                // If we're on full resolution and have a previous solution, try to merge it, too.
                 if (scale == 0 && _previous_solution != nullptr) {
-                    for (int x = 0; x < _previous_solution->_width; x++) {
-                        for (int y = 0; y < _previous_solution->_height; y++) {
-                            Point lower_offset = _previous_solution->at(y, x).offset;
-                            Rect candidate_rect(lower_offset.x + x, lower_offset.y + y,
-                                                _patch_size, _patch_size);
-                            Rect current_patch_rect(x, y, _patch_size, _patch_size);
-                            OffsetMapEntry *current_offset = offset_map->ptr(y, x);
-                            updateOffsetMapEntryIfBetter(current_patch_rect, lower_offset,
-                                                         candidate_rect, scale, current_offset);
-                        }
-                    }
+                    ParallelMergeOffsetMaps pmom(*_previous_solution, 1, _patch_size,
+                                                 scale, *this, *offset_map);
+                    Range whole_width(0, _previous_solution->_width);
+                    pmom(whole_width);
+                    //parallel_for_(whole_width, pmom);
                 }
             }
 
@@ -153,20 +172,20 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
             // Correct orientation if we're still in flipped state.
             offset_map->flip();
         }
-        delete previous_offset_map;
-        previous_offset_map = offset_map;
+        delete previous_scale_offset_map;
+        previous_scale_offset_map = offset_map;
     }
-    _previous_solution = shared_ptr<OffsetMap>(previous_offset_map);
+    _previous_solution = shared_ptr<OffsetMap>(previous_scale_offset_map);
     return _previous_solution;
 }
 
-void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_rect, const Point &candidate_offset,
+void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_patch_rect, const Point &candidate_offset,
                                                         const Rect &candidate_rect, const int scale,
                                                         OffsetMapEntry *offset_map_entry) const {
-    // Check if it's fully inside, only try to update then
+    // Check if it's fully inside, only try to update then.
     if ((_source_rect_pyr[scale] & candidate_rect) == candidate_rect) {
         float previous_distance = offset_map_entry->distance;
-		float ssd_value = patchDistance(candidate_rect, target_rect, scale, previous_distance);
+		float ssd_value = patchDistance(candidate_rect, target_patch_rect, scale, previous_distance);
         if (ssd_value < previous_distance) {
             offset_map_entry->offset = candidate_offset;
             offset_map_entry->distance = ssd_value;
@@ -215,7 +234,7 @@ int RandomizedPatchMatch::findNumberScales(const Mat &source, const Mat &target,
     return cvFloor(log2( min_dimension / patch_size));
 }
 
-float RandomizedPatchMatch::patchDistance(const cv::Rect &source_rect, const cv::Rect &target_rect, const int scale,
+float RandomizedPatchMatch::patchDistance(const Rect &source_rect, const Rect &target_rect, const int scale,
                                           const float previous_dist) const {
     Mat source_patch = _source_pyr[scale](source_rect);
     Mat target_patch = _target_pyr[scale](target_rect);

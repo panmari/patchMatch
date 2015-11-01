@@ -23,6 +23,13 @@ public:
     const cv::Mat getSourceGradientX() const { return _source_grad_x_pyr[0]; };
     const cv::Mat getSourceGradientY() const { return _source_grad_y_pyr[0]; };
 
+    /**
+    * Updates 'offset_map_entry' with the given 'candidate_offset' if the patch corresponding to 'candidate_rect' on
+    * 'source_img' is a better match than for the given 'patch'.
+    */
+    void updateOffsetMapEntryIfBetter(const cv::Rect &target_patch_rect, const cv::Point &candidate_offset,
+                                      const cv::Rect &candidate_rect, const int scale,
+                                      OffsetMapEntry *offset_map_entry) const;
 private:
     std::vector<cv::Mat> _source_pyr, _target_pyr;
 
@@ -55,14 +62,6 @@ private:
      */
     void initializeWithRandomOffsets(const cv::Mat &target_img, const cv::Mat &source_img, const int scale,
                                      OffsetMap *offset_map, unsigned int random_seed = 42) const;
-
-    /**
-     * Updates 'offset_map_entry' with the given 'candidate_offset' if the patch corresponding to 'candidate_rect' on
-     * 'source_img' is a better match than for the given 'patch'.
-     */
-    void updateOffsetMapEntryIfBetter(const cv::Rect &target_rect, const cv::Point &candidate_offset,
-                                      const cv::Rect &candiadate_rect, const int scale,
-                                      OffsetMapEntry *offset_map_entry) const;
 
     /**
      * Computes the distance of two patches. Patches have to be the same size on both images.
