@@ -30,6 +30,7 @@ constexpr int ITERATIONS_PER_SCALE = 5;
  * If true, does try to improve patches by doing random search. Else, only propagation is used. Default: true.
  */
 constexpr bool RANDOM_SEARCH = true;
+constexpr bool MULTIPLE_SCALES = false;
 constexpr bool MERGE_UPSAMPLED_OFFSETS = true;
 constexpr float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
@@ -192,8 +193,11 @@ void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, co
 }
 
 int RandomizedPatchMatch::findNumberScales(const Mat &source, const Mat &target, int patch_size) const {
-    double min_dimension = std::min(std::min(std::min(source.cols, source.rows), target.cols), target.rows);
-    return cvFloor(log2( min_dimension / patch_size));
+    if (MULTIPLE_SCALES) {
+        double min_dimension = std::min(std::min(std::min(source.cols, source.rows), target.cols), target.rows);
+        return cvFloor(log2(min_dimension / patch_size));
+    } else
+        return 0;
 }
 
 float RandomizedPatchMatch::patchDistance(const Rect &source_rect, const Rect &target_rect, const int scale,
