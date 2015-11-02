@@ -39,13 +39,7 @@ TEST(offset_map_test, flipping_should_work_on_square_image_for_top_left)
     ASSERT_EQ(100, test._width);
     ASSERT_EQ(100, test._height);
 
-    // Pointer to flipped top left should not be equal to unflipped top left!
-    OffsetMapEntry *top_left_flipped = test.ptr(0, 0);
-    EXPECT_NE(top_left, top_left_flipped);
-
     OffsetMapEntry *bottom_right_flipped = test.ptr(99, 99);
-    EXPECT_EQ(top_left, bottom_right_flipped);
-
     EXPECT_EQ(100, bottom_right_flipped->distance);
 }
 
