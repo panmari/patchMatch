@@ -17,7 +17,8 @@ public:
                      cv::Mat &reconstructed_y_gradient) const;
 
 private:
-    const cv::Mat _source, _source_grad_x, _source_grad_y, _hole;
+    const cv::Mat _source, _source_grad_x, _source_grad_y;
+    cv::Mat _inverse_hole;
     const std::shared_ptr<OffsetMap> _offset_map;
     const int _patch_size, _scale;
 

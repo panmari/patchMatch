@@ -2,6 +2,8 @@
 #include "patch_match_provider/RandomizedPatchMatch.h"
 #include "VotedReconstruction.h"
 #include "util.h"
+#include "VotedGradientReconstruction.h"
+#include "PoissonSolver.h"
 
 using boost::format;
 using cv::findNonZero;
@@ -21,7 +23,7 @@ using std::min_element;
 const int EM_STEPS = 20;
 const bool WEXLER_UPSCALE = true;
 const bool DUMP_INTERMEDIARY_RESULTS = true;
-const bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
+const bool DUMP_UPSCALING_DEBUG_OUTPUT = true;
 
 namespace {
     bool compare_by_x(Point a, Point b) {
@@ -96,10 +98,34 @@ Mat HoleFilling::run() {
                 pmutil::imwrite_lab("hole_filled_" + modifier + ".exr", current_solution);
             }
             _offset_map_pyr[scale] = rmp.match();
-            VotedReconstruction vr(_offset_map_pyr[scale], source, _patch_size);
-            float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / (EM_STEPS - 1);
             Mat reconstructed;
-            vr.reconstruct(reconstructed, mean_shift_bandwith_scale);
+            if (true) {
+                Mat hole_for_target = _hole_pyr[scale](_target_rect_pyr[scale]);
+                VotedReconstruction vr(_offset_map_pyr[scale], source, hole_for_target, _patch_size);
+                float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / (EM_STEPS - 1);
+                vr.reconstruct(reconstructed, mean_shift_bandwith_scale);
+            } else {
+                Mat source_grad_x = rmp.getSourceGradientX();
+                Mat source_grad_y = rmp.getSourceGradientY();
+                VotedGradientReconstruction vr(_offset_map_pyr[scale], source, source_grad_x, source_grad_y,
+                                               _hole_pyr[scale], _patch_size);
+                Mat reconstructed_img, reconstructed_grad_x, reconstructed_grad_y;
+                vr.reconstruct(reconstructed_img, reconstructed_grad_x, reconstructed_grad_y);
+
+                Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
+
+                Mat target_img = source(_target_rect_pyr[scale]).clone();
+                Mat target_grad_x = source_grad_x(_target_rect_pyr[scale]).clone();
+                Mat target_grad_y = source_grad_y(_target_rect_pyr[scale]).clone();
+
+                reconstructed_img.copyTo(target_img, write_back_mask);
+                reconstructed_grad_x.copyTo(target_grad_x, write_back_mask);
+                reconstructed_grad_y.copyTo(target_grad_y, write_back_mask);
+
+                PoissonSolver ps(target_img, target_grad_x, target_grad_y);
+                //ps.solve(reconstructed);
+                reconstructed = reconstructed_img;
+            }
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
             Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
             reconstructed.copyTo(_target_area_pyr[scale], write_back_mask);
@@ -116,7 +142,8 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         int previous_scale = current_scale + 1;
         auto previous_offset_map = _offset_map_pyr[previous_scale];
         Mat source = _img_pyr[current_scale];
-        VotedReconstruction vr(previous_offset_map, source, _patch_size, 2);
+        Mat hole_for_target = _hole_pyr[current_scale](_target_rect_pyr[current_scale]);
+        VotedReconstruction vr(previous_offset_map, source, hole_for_target, _patch_size, 2);
         // TODO: Find out what mean shift scale works best here.
         vr.reconstruct(upscaled_target_area, 3);
 
@@ -142,6 +169,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
             source(Rect(Point(0, 0), _hole_pyr[current_scale].size())).setTo(cv::Scalar(0, 0, 0),
                                                                              _hole_pyr[current_scale]);
 
+            cv::imwrite("wexler_upscaled" + std::to_string(current_scale) + "_hole.exr", hole_for_target);
             pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_target_area);
             pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_target_area);
             pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_target_area_in_img.exr", source);

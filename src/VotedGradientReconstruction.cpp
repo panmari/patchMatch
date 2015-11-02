@@ -1,8 +1,11 @@
 #include "VotedGradientReconstruction.h"
 
+using cv::add;
 using cv::COLOR_GRAY2BGR;
 using cv::divide;
+using cv::_InputOutputArray;
 using cv::Mat;
+using cv::noArray;
 using cv::Point;
 using cv::Rect;
 using cv::Size;
@@ -13,8 +16,9 @@ VotedGradientReconstruction::VotedGradientReconstruction(const shared_ptr<Offset
                                                          const Mat &source_grad_y, const Mat &hole,
                                                          int patch_size, int scale) :
         _offset_map(offset_map), _source(source), _source_grad_x(source_grad_x), _source_grad_y(source_grad_y),
-        _hole(hole), _patch_size(patch_size), _scale(scale) {
+         _patch_size(patch_size), _scale(scale) {
     if (scale != 1) {
+        bitwise_not(hole, _inverse_hole);
         // Source images need some border for reconstruction if we're using bigger patches.
         copyMakeBorder(source, _source, 0, 1, 0, 1, cv::BORDER_REFLECT);
         copyMakeBorder(source_grad_x, _source_grad_x, 0, 1, 0, 1, cv::BORDER_REFLECT);
@@ -47,11 +51,16 @@ void VotedGradientReconstruction::reconstruct(Mat &reconstructed, Mat &reconstru
             Mat matching_patch = _source(matching_patch_rect);
             Mat matching_patch_grad_x = _source_grad_x(matching_patch_rect);
             Mat matching_patch_grad_y = _source_grad_y(matching_patch_rect);
-
             float normalized_dist = sqrtf(offset_map_entry.distance);
             float weight = expf(-normalized_dist / two_sigma_sqr);
             Rect current_patch_rect(x * _scale, y * _scale, _patch_size * _scale, _patch_size * _scale);
-            reconstructed(current_patch_rect) += matching_patch * weight;
+            _InputOutputArray mask;
+            if (_scale != 1) {
+                mask = _inverse_hole(current_patch_rect);
+            } else {
+                mask = noArray();
+            }
+            add(reconstructed(current_patch_rect), matching_patch * weight, reconstructed(current_patch_rect), mask);
             reconstructed_x_gradient(current_patch_rect) += matching_patch_grad_x * weight;
             reconstructed_y_gradient(current_patch_rect) += matching_patch_grad_y * weight;
             // Remember for every pixel, how many patches were added up for later division.

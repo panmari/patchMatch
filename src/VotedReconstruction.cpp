@@ -36,6 +36,8 @@ namespace {
         virtual void operator()(const cv::Range &r) const {
             for (int i = r.start; i < r.end; i++) {
                 const vector<Vec3f> one_pixel_colors = _colors[i];
+                if (one_pixel_colors.empty())
+                    continue;
                 Scalar mean, std;
                 meanStdDev(one_pixel_colors, mean, std);
                 float avg_std_channels = static_cast<float>(std[0] + std[1] + std[2]) / 3;
@@ -72,8 +74,8 @@ namespace {
 }
 
 VotedReconstruction::VotedReconstruction(const shared_ptr<OffsetMap> offset_map, const Mat &source,
-                                         int patch_size, int scale) :
-        _offset_map(offset_map), _source(source), _patch_size(patch_size), _scale(scale) {
+                                         const Mat &hole, int patch_size, int scale) :
+        _offset_map(offset_map), _source(source), _hole(hole), _patch_size(patch_size), _scale(scale) {
     if (scale != 1) {
         // Source images need some border for reconstruction if we're using bigger patches.
         copyMakeBorder(source, _source, 0, 1, 0, 1, cv::BORDER_REFLECT);
@@ -111,15 +113,18 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
 
             for (int x_patch = 0; x_patch < _patch_size * _scale; x_patch++) {
                 for (int y_patch = 0; y_patch < _patch_size * _scale; y_patch++) {
-                    int idx = x * _scale + x_patch + reconstructed_size.width * (y * _scale + y_patch);
-                    colors[idx].push_back(matching_patch.at<Vec3f>(y_patch, x_patch));
-                    weights[idx].push_back(weight);
+                    Point p(x * _scale + x_patch, y * _scale + y_patch);
+                    if (_hole.at<uchar>(p) != 0) {
+                        int idx = p.x + reconstructed_size.width * p.y;
+                        colors[idx].push_back(matching_patch.at<Vec3f>(y_patch, x_patch));
+                        weights[idx].push_back(weight);
+                    }
                 }
             }
         }
     }
     Mat reconstructed_flat = reconstructed.reshape(3, 1);
-    parallel_for_(cv::Range(0, colors.size()),
+    parallel_for_(cv::Range(0, reconstructed_flat.cols),
                   ParallelModeAwareReconstruction(colors, weights, mean_shift_bandwith_scale, &reconstructed_flat));
 }
 

@@ -58,7 +58,8 @@ int main( int argc, char** argv )
     cvtColor(reconstructed, reconstructed, CV_Lab2BGR);
     imwrite("reconstructed.exr", reconstructed);
 
-    VotedReconstruction vr(offset_map, source, PATCH_SIZE);
+    Mat empty_mask = Mat::zeros(source.size(), CV_8U);
+    VotedReconstruction vr(offset_map, source, empty_mask, PATCH_SIZE);
     Mat reconstructed2;
     vr.reconstruct(reconstructed2, 3);
     cvtColor(reconstructed2, reconstructed2, CV_Lab2BGR);
