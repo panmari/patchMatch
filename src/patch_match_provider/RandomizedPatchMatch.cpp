@@ -67,20 +67,28 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
             // After half the iterations, merge the lower resolution offset where they're better.
             // This has to be done in an 'even' iteration because of the flipping.
-            if (scale != _nr_scales && i == ITERATIONS_PER_SCALE / 2) {
+            if (i == ITERATIONS_PER_SCALE / 2) {
+                constexpr int PARALLEL_MERGING_THRESHOLD = 10000;
                 assert(!offset_map->isFlipped());
-                if (MERGE_UPSAMPLED_OFFSETS) {
+                if (MERGE_UPSAMPLED_OFFSETS && scale != _nr_scales) {
                     ParallelMergeOffsetMaps pmom(*previous_scale_offset_map, 2, _patch_size,
                                                  scale, *this, *offset_map);
                     Range whole_width(0, previous_scale_offset_map->_width);
-                    pmom(whole_width);
+                    if (previous_scale_offset_map->_width * previous_scale_offset_map->_height >
+                            PARALLEL_MERGING_THRESHOLD)
+                        parallel_for_(whole_width, pmom);
+                    else
+                        pmom(whole_width);
                 }
                 // If we're on full resolution and have a previous solution, try to merge it, too.
                 if (scale == 0 && _previous_solution != nullptr) {
                     ParallelMergeOffsetMaps pmom(*_previous_solution, 1, _patch_size,
                                                  scale, *this, *offset_map);
                     Range whole_width(0, _previous_solution->_width);
-                    pmom(whole_width);
+                    if (_previous_solution->_width * _previous_solution->_height > PARALLEL_MERGING_THRESHOLD)
+                        parallel_for_(whole_width, pmom);
+                    else
+                        pmom(whole_width);
                 }
             }
 
