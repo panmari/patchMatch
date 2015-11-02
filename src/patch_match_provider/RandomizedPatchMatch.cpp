@@ -68,7 +68,7 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
             // After half the iterations, merge the lower resolution offset where they're better.
             // This has to be done in an 'even' iteration because of the flipping.
             if (i == ITERATIONS_PER_SCALE / 2) {
-                constexpr int PARALLEL_MERGING_THRESHOLD = 10000;
+                constexpr int PARALLEL_MERGING_THRESHOLD = 500;
                 assert(!offset_map->isFlipped());
                 if (MERGE_UPSAMPLED_OFFSETS && scale != _nr_scales) {
                     ParallelMergeOffsetMaps pmom(*previous_scale_offset_map, 2, _patch_size,

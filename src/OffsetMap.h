@@ -19,7 +19,10 @@ public:
     OffsetMapEntry* ptr(const int y, const int x);
 
     bool isFlipped() const { return _flipped; };
-    void flip() { _flipped = !_flipped; };
+    void flip() {
+        std::reverse(_data.begin(), _data.end());
+        _flipped = !_flipped;
+    };
 
     float get75PercentileDistance() const;
 
