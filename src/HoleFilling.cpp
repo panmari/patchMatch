@@ -44,9 +44,9 @@ namespace {
     }
 }
 
-HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _patch_size(patch_size),
+HoleFilling::HoleFilling(const Mat &img, const Mat &hole, int patch_size) : _patch_size(patch_size),
         _nr_scales(computeNrScales(img, patch_size)) {
-    buildPyramid(img, _img_pyr, _nr_scales);
+    buildPyramid(img.clone(), _img_pyr, _nr_scales);
     buildPyramid(hole, _hole_pyr, _nr_scales);
     _hole_pyr.push_back(hole);
     for (Mat h: _hole_pyr) {

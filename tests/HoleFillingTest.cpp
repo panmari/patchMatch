@@ -65,7 +65,7 @@ TEST(hole_filling_test, square_hole_on_repeated_texture_should_give_good_result)
     // The reconstructed image should be close to the original one, in this very simple case.
     Mat img_bgr;
     cvtColor(img, img_bgr, CV_Lab2BGR);
-    double ssd = pmutil::ssd(img_bgr, filled);
+    double ssd = norm(img_bgr, filled, cv::NORM_L2SQR);
     EXPECT_LT(ssd, 0.2);
 }
 
@@ -96,7 +96,7 @@ TEST(hole_filling_test, rectangular_hole_on_repeated_texture_should_give_good_re
     // The reconstructed image should be close to the original one, in this very simple case.
     Mat img_bgr;
     cvtColor(img, img_bgr, CV_Lab2BGR);
-    double ssd = pmutil::ssd(img_bgr, filled);
+    double ssd = norm(img_bgr, filled, cv::NORM_L2SQR);
     EXPECT_LT(ssd, 0.2);
 }
 
@@ -130,6 +130,6 @@ TEST(hole_filling_test, elliptical_hole_on_repeated_texture_should_give_good_res
     // The reconstructed image should be close to the original one, in this very simple case.
     Mat img_bgr;
     cvtColor(img, img_bgr, CV_Lab2BGR);
-    double ssd = pmutil::ssd(img_bgr, filled);
+    double ssd = norm(img_bgr, filled, cv::NORM_L2SQR);
     EXPECT_LT(ssd, 0.2);
 }
