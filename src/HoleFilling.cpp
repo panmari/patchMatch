@@ -23,7 +23,7 @@ using std::min_element;
 const int EM_STEPS = 20;
 const bool WEXLER_UPSCALE = true;
 const bool DUMP_INTERMEDIARY_RESULTS = true;
-const bool DUMP_UPSCALING_DEBUG_OUTPUT = true;
+const bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
 
 namespace {
     bool compare_by_x(Point a, Point b) {
@@ -141,27 +141,32 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         // Better method for upscaling, see Wexler2007 Section 3.2
         int previous_scale = current_scale + 1;
         auto previous_offset_map = _offset_map_pyr[previous_scale];
-        Mat source = _img_pyr[current_scale];
-        Mat hole_for_target = _hole_pyr[current_scale](_target_rect_pyr[current_scale]);
-        VotedReconstruction vr(previous_offset_map, source, hole_for_target, _patch_size, 2);
+        Rect prev_target_area_rect = _target_rect_pyr[previous_scale];
+        Rect target_area_rect = _target_rect_pyr[current_scale];
+
+        // We're working on target area of previous scale times two, so take also hole region from there.
+        Rect hole_rect(prev_target_area_rect.tl() * 2, prev_target_area_rect.size() * 2);
+        Mat hole_for_target = _hole_pyr[current_scale](hole_rect);
+        VotedReconstruction vr(previous_offset_map, _img_pyr[current_scale], hole_for_target, _patch_size, 2);
         // TODO: Find out what mean shift scale works best here.
-        vr.reconstruct(upscaled_target_area, 3);
+        Mat upscaled_full;
+        vr.reconstruct(upscaled_full, 3);
 
         // Cut out the needed portion of the upscaled target area by
         // projecting top left of previous target area to new scale, compute offset to needed top left.
-        Rect prev_target_area_rect = _target_rect_pyr[previous_scale];
-        Rect target_area_rect = _target_rect_pyr[current_scale];
         Point offset = target_area_rect.tl() - prev_target_area_rect.tl() * 2;
         Rect cutout_rect(offset, target_area_rect.size());
+
         // In case our target area was right at the edge of the image, we might need to increase the size a bit here.
-        if (cutout_rect.x + cutout_rect.width > upscaled_target_area.cols ||
-                cutout_rect.y + cutout_rect.height > upscaled_target_area.rows) {
-            copyMakeBorder(upscaled_target_area, upscaled_target_area, 0, 2, 0, 2, cv::BORDER_REFLECT);
+        if (cutout_rect.x + cutout_rect.width > upscaled_full.cols ||
+                cutout_rect.y + cutout_rect.height > upscaled_full.rows) {
+            copyMakeBorder(upscaled_full, upscaled_full, 0, 2, 0, 2, cv::BORDER_REFLECT);
         }
 
-        upscaled_target_area = upscaled_target_area(cutout_rect);
+        upscaled_target_area = upscaled_full(cutout_rect);
 
         if (DUMP_UPSCALING_DEBUG_OUTPUT) {
+            Mat source = _img_pyr[current_scale].clone();
             Rect upscaled_rect(prev_target_area_rect.x * 2, prev_target_area_rect.y * 2,
                                prev_target_area_rect.width * 2, prev_target_area_rect.height * 2);
             cv::rectangle(source, upscaled_rect, Scalar(100, 10, 10));
@@ -170,7 +175,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
                                                                              _hole_pyr[current_scale]);
 
             cv::imwrite("wexler_upscaled" + std::to_string(current_scale) + "_hole.exr", hole_for_target);
-            pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_target_area);
+            pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_full);
             pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_target_area);
             pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_target_area_in_img.exr", source);
         }

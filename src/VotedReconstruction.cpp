@@ -25,17 +25,18 @@ namespace {
         const vector<vector<Vec3f>> _colors;
         const vector<vector<float>> _weights;
         const float _mean_shift_bandwith_scale;
-        Mat *_reconstructed_flat;
+        Mat &_reconstructed_flat;
 
     public:
         ParallelModeAwareReconstruction(const vector<vector<Vec3f>> &colors, const vector<vector<float>> &weights,
-                                        const float mean_shift_bandwith_scale, Mat *reconstructed_flat)
+                                        const float mean_shift_bandwith_scale, Mat &reconstructed_flat)
                 : _colors(colors), _weights(weights), _mean_shift_bandwith_scale(mean_shift_bandwith_scale),
                   _reconstructed_flat(reconstructed_flat) { }
 
         virtual void operator()(const cv::Range &r) const {
             for (int i = r.start; i < r.end; i++) {
                 const vector<Vec3f> one_pixel_colors = _colors[i];
+                // If no colors are present, this pixel does not need reconstruction, so skip it here.
                 if (one_pixel_colors.empty())
                     continue;
                 Scalar mean, std;
@@ -51,8 +52,8 @@ namespace {
                     for (int assignment: mode_assignments) {
                         occurrences[assignment]++;
                     }
-                    auto max_occurences_iter = std::max_element(occurrences.begin(), occurrences.end());
-                    long max_mode = std::distance(occurrences.begin(), max_occurences_iter);
+                    auto max_occurrences_iter = std::max_element(occurrences.begin(), occurrences.end());
+                    long max_mode = std::distance(occurrences.begin(), max_occurrences_iter);
                     const vector<float> one_pixel_weights = _weights[i];
                     Vec3f final_color(0, 0, 0);
                     double total_weight = 0;
@@ -63,10 +64,10 @@ namespace {
                             total_weight += weight;
                         }
                     }
-                    _reconstructed_flat->at<Vec3f>(i) = final_color / total_weight;
+                    _reconstructed_flat.at<Vec3f>(i) = final_color / total_weight;
                 } else {
                     // If there is not much variance, there is no need to do voting, simply take first color.
-                    _reconstructed_flat->at<Vec3f>(i) = one_pixel_colors[0];
+                    _reconstructed_flat.at<Vec3f>(i) = one_pixel_colors[0];
                 }
             }
         }
@@ -113,9 +114,10 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
 
             for (int x_patch = 0; x_patch < _patch_size * _scale; x_patch++) {
                 for (int y_patch = 0; y_patch < _patch_size * _scale; y_patch++) {
-                    Point p(x * _scale + x_patch, y * _scale + y_patch);
-                    if (_hole.at<uchar>(p) != 0) {
-                        int idx = p.x + reconstructed_size.width * p.y;
+                    int curr_x = x * _scale + x_patch;
+                    int curr_y = y * _scale + y_patch;
+                    if (_hole.at<uchar>(curr_y, curr_x) > 0) {
+                        int idx = curr_x + reconstructed_size.width * curr_y;
                         colors[idx].push_back(matching_patch.at<Vec3f>(y_patch, x_patch));
                         weights[idx].push_back(weight);
                     }
@@ -124,7 +126,10 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
         }
     }
     Mat reconstructed_flat = reconstructed.reshape(3, 1);
-    parallel_for_(cv::Range(0, reconstructed_flat.cols),
-                  ParallelModeAwareReconstruction(colors, weights, mean_shift_bandwith_scale, &reconstructed_flat));
+    // TODO: only pass range that actually needs pixels reconstructed.
+    cv::Range whole_width(0, reconstructed_flat.cols);
+    ParallelModeAwareReconstruction pmar(colors, weights, mean_shift_bandwith_scale, reconstructed_flat);
+    // pmar(whole_width); // Single thread.
+    parallel_for_(whole_width, pmar);
 }
 
