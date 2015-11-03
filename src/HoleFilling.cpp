@@ -145,7 +145,8 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         Rect target_area_rect = _target_rect_pyr[current_scale];
 
         // We're working on target area of previous scale times two, so take also hole region from there.
-        Rect hole_rect(prev_target_area_rect.tl() * 2, prev_target_area_rect.size() * 2);
+        Rect hole_rect = Rect(prev_target_area_rect.tl() * 2, prev_target_area_rect.size() * 2) &
+                Rect(Point(0,0), _hole_pyr[current_scale].size());
         Mat hole_for_target = _hole_pyr[current_scale](hole_rect);
         VotedReconstruction vr(previous_offset_map, _img_pyr[current_scale], hole_for_target, _patch_size, 2);
         // TODO: Find out what mean shift scale works best here.
