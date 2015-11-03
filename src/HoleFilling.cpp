@@ -6,6 +6,7 @@
 #include "PoissonSolver.h"
 
 using boost::format;
+using cv::bitwise_not;
 using cv::findNonZero;
 using cv::countNonZero;
 using cv::Mat;
@@ -13,6 +14,7 @@ using cv::Point;
 using cv::pyrUp;
 using cv::Rect;
 using cv::Scalar;
+using cv::threshold;
 using std::vector;
 using std::max_element;
 using std::min_element;
@@ -46,9 +48,12 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _patch_size(patc
         _nr_scales(computeNrScales(img, patch_size)) {
     buildPyramid(img, _img_pyr, _nr_scales);
     buildPyramid(hole, _hole_pyr, _nr_scales);
-
+    _hole_pyr.push_back(hole);
+    for (Mat h: _hole_pyr) {
+        threshold(h, h, 0, 255, cv::THRESH_BINARY);
+    }
     // Skip scales where the hole vanishes, i. e. makes up 0 pixels.
-    while (sum(_hole_pyr[_nr_scales])[0] == 0) {
+    while (countNonZero(_hole_pyr[_nr_scales]) == 0) {
         _nr_scales--;
     }
 
@@ -70,7 +75,8 @@ Mat HoleFilling::run() {
             // Make some initial guess, here mean color of whole image.
             // TODO: Do some interpolation of borders for better initial guess.
             Rect low_res_target_rect = _target_rect_pyr[_nr_scales];
-            Mat low_res_inverted_mask = 255 - _hole_pyr[_nr_scales](low_res_target_rect);
+            Mat low_res_inverted_mask;
+            bitwise_not(_hole_pyr[_nr_scales](low_res_target_rect), low_res_inverted_mask);
             Mat without_hole;
             source(low_res_target_rect).copyTo(without_hole, low_res_inverted_mask);
             Scalar mean_color = sum(without_hole) / countNonZero(low_res_inverted_mask);
