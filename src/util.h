@@ -1,6 +1,10 @@
 #ifndef PATCHMATCH_UTIL_H
 #define PATCHMATCH_UTIL_H
 
+#ifdef _MSC_VER
+#define constexpr const
+#endif
+
 #include <boost/format.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
