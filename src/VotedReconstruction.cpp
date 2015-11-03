@@ -1,7 +1,6 @@
 #include "VotedReconstruction.h"
 #include "PoissonSolver.h"
 #include "util.h"
-#include <iostream>
 
 using cv::COLOR_GRAY2BGR;
 using cv::divide;

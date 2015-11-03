@@ -24,6 +24,7 @@ const int EM_STEPS = 20;
 const bool WEXLER_UPSCALE = true;
 const bool DUMP_INTERMEDIARY_RESULTS = true;
 const bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
+const cv::Vec3f HoleFilling::hole_color = cv::Vec3f(10000, 10000, 10000);
 
 namespace {
     bool compare_by_x(Point a, Point b) {
@@ -62,7 +63,9 @@ HoleFilling::HoleFilling(Mat &img, Mat &hole, int patch_size) : _patch_size(patc
 Mat HoleFilling::run() {
     // Set the source to full black in hole.
     for (int scale = _nr_scales; scale >= 0; scale--) {
-        Mat source = _img_pyr[scale].clone();
+        Mat source = _img_pyr[scale];
+        // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
+        source.setTo(hole_color, _hole_pyr[scale]);
         if (scale == _nr_scales) {
             // Make some initial guess, here mean color of whole image.
             // TODO: Do some interpolation of borders for better initial guess.
@@ -82,9 +85,6 @@ Mat HoleFilling::run() {
             Mat hole_mask = _hole_pyr[scale];
             upscaled_solution.copyTo(_target_area_pyr[scale], hole_mask(_target_rect_pyr[scale]));
         }
-        // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
-        // TODO: Possibly set some other value here.
-        source.setTo(Scalar(10000, 10000, 10000), _hole_pyr[scale]);
         RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size, 0);
         for (int i = 0; i < EM_STEPS; i++) {
             if (DUMP_INTERMEDIARY_RESULTS) {

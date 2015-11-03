@@ -8,7 +8,7 @@
 class HoleFilling {
 
 public:
-
+    const static cv::Vec3f hole_color;
     /**
      * @param img the image of which we want to fill the hole of, usually in L*a*b* color space.
      * @param hole a bitmask of the hole, non-zero where the hole is, zero otherwise (one channel uint8).
