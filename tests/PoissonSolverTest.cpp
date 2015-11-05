@@ -92,5 +92,5 @@ TEST(poisson_solver_test, noisy_natural_image_given) {
     ASSERT_LT(gotten_ssd, ssd(img_noisy(crop_rect), img(crop_rect)));
     auto expected_ssd = 0;
     // Error here is quite high.
-    ASSERT_NEAR(gotten_ssd, expected_ssd, 15);
+    ASSERT_NEAR(gotten_ssd, expected_ssd, 16);
 }

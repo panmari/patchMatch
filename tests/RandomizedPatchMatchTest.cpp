@@ -24,7 +24,8 @@ TEST(randomized_patch_match_test, on_two_identical_trivial_images)
     Mat img1 = Mat::ones(20, 20, CV_32FC1);
     Mat img2 = Mat::ones(20, 20, CV_32FC1);
 
-    RandomizedPatchMatch rpm(img1, img2, 7, 0);
+    RandomizedPatchMatch rpm(img1, img2.size(), 7, 0);
+    rpm.setTargetArea(img2);
     shared_ptr<OffsetMap> diff = rpm.match();
     double overall_ssd = diff->summedDistance();
 
@@ -37,7 +38,8 @@ TEST(randomized_patch_match_test, on_two_very_different_trivial_images)
     Mat img2 = Mat::ones(20, 20, CV_32FC1);
 
     int patch_size = 7;
-    RandomizedPatchMatch rpm(img1, img2, patch_size, 0.f);
+    RandomizedPatchMatch rpm(img1, img2.size(), patch_size, 0.f);
+    rpm.setTargetArea(img2);
     shared_ptr<OffsetMap> diff = rpm.match();
     double overall_ssd = diff->summedDistance();
 
@@ -53,8 +55,10 @@ TEST(randomized_patch_match_test, all_offsets_inside_image_on_random_images)
     randu(img1, Scalar::all(0.0), Scalar::all(1.0f));
     Mat img2 = Mat::ones(40, 40, CV_32FC1);
     randu(img2, Scalar::all(0.0), Scalar::all(1.0f));
+    int patch_size = 7;
 
-    RandomizedPatchMatch rpm(img1, img2, 7);
+    RandomizedPatchMatch rpm(img1, img2.size(), patch_size, 0.f);
+    rpm.setTargetArea(img2);
     shared_ptr<OffsetMap> diff = rpm.match();
     for (int x = 0; x < diff->_width; x++) {
         for (int y = 0; y < diff->_height; y++) {
@@ -78,8 +82,10 @@ TEST(randomized_patch_match_test, images_with_displaced_rectangles_should_produc
     img1(Rect(10, 10, 5, 5)) = 0;
     // Black rectangle on image 2 in slightly different location.
     img2(Rect(20, 25, 5, 5)) = 0;
+    int patch_size = 7;
 
-    RandomizedPatchMatch rpm(img1, img2, 7);
+    RandomizedPatchMatch rpm(img1, img2.size(), patch_size, 0.f);
+    rpm.setTargetArea(img2);
     shared_ptr<OffsetMap> diff = rpm.match();
     imwrite("offset_map_visualized.exr", diff->toColorCodedImage());
     imwrite("dist_img.exr", diff->getDistanceImage());
@@ -99,7 +105,8 @@ TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
 	pmutil::convert_for_computation(source, resize_factor);
 	pmutil::convert_for_computation(target, resize_factor);
 	const int patch_size = 7;
-	RandomizedPatchMatch rpm(source, target, patch_size, 0);
+    RandomizedPatchMatch rpm(source, target.size(), patch_size, 0.f);
+    rpm.setTargetArea(target);
     shared_ptr<OffsetMap> diff_rpm = rpm.match();
 
 	ExhaustivePatchMatch epm(source, target, patch_size);
@@ -111,6 +118,6 @@ TEST(randomized_patch_match_test, should_be_close_to_exhaustive_patch_match)
 	double mean_ssd_epm = diff_epm->summedDistance() / nr_pixels;
 
 	// This is in L*a*b* space, so the errors are quite high.
-	ASSERT_GT(mean_ssd_rpm, mean_ssd_epm);
-	ASSERT_NEAR(mean_ssd_rpm, mean_ssd_epm, 1000);
+    // Still, rpm should have lower error since rotations are possible there.
+	ASSERT_LT(mean_ssd_rpm, mean_ssd_epm);
 }
