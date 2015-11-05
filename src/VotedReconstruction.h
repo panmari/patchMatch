@@ -13,16 +13,16 @@ public:
      * the y-channel being the y-offset.
      * The patch image is assumed to be the one referenced in offset_map.
      */
-    VotedReconstruction(const std::shared_ptr<OffsetMap> offset_map, const cv::Mat &source, const cv::Mat &hole,
-                        int patch_size, int scale = 1);
+    VotedReconstruction(const std::shared_ptr<OffsetMap> offset_map, const std::vector<cv::Mat> &source,
+                        const cv::Mat &hole, int patch_size, int scale_change = 1);
 
     void reconstruct(cv::Mat &reconstructed, float mean_shift_bandwith_scale) const;
 
 private:
-    cv::Mat _source;
+    std::vector<cv::Mat> _sources;
     const cv::Mat _hole;
     const std::shared_ptr<OffsetMap> _offset_map;
-    const int _patch_size, _scale;
+    const int _patch_size, _scale_change;
 
 };
 

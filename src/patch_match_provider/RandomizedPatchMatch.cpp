@@ -36,10 +36,10 @@ constexpr bool MULTIPLE_SCALES = false;
 constexpr bool MERGE_UPSAMPLED_OFFSETS = true;
 constexpr float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
-RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda,
-                                           float min_rotation, float max_rotation, float rotation_step) :
-        _patch_size(patch_size), _max_search_radius(max(target.cols, target.rows)),
-        _nr_scales(findNumberScales(source, target, patch_size)), _lambda(lambda) {
+RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Size &target_size, int patch_size,
+                                           float lambda, float min_rotation, float max_rotation, float rotation_step) :
+        _patch_size(patch_size), _max_search_radius(max(source.cols, source.rows)),
+        _nr_scales(findNumberScales(source.size(), target_size, patch_size)), _lambda(lambda) {
     buildPyramid(source, _source_pyr, _nr_scales);
     for (int i = 0; i <= _nr_scales; i++) {
         Mat scaled_source = _source_pyr[i];
@@ -52,7 +52,6 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat 
         computeGradientY(scaled_source, gy);
         _source_grad_y_pyr.push_back(gy);
     }
-    setTargetArea(target);
 }
 
 shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
@@ -202,13 +201,15 @@ void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, co
             auto entry = offset_map->ptr(y, x);
             entry->offset = Point(randomX, randomY);
             entry->distance = inital_dist;
+            entry->rotation_idx = rand() % _source_rotations_pyr[scale].size();
         }
     }
 }
 
-int RandomizedPatchMatch::findNumberScales(const Mat &source, const Mat &target, int patch_size) const {
+int RandomizedPatchMatch::findNumberScales(const Size &source_size, const Size &target_size, int patch_size) const {
     if (MULTIPLE_SCALES) {
-        double min_dimension = std::min(std::min(std::min(source.cols, source.rows), target.cols), target.rows);
+        double min_dimension = std::min(std::min(std::min(source_size.width, source_size.height),
+                                                 target_size.width), target_size.height);
         return cvFloor(log2(min_dimension / patch_size));
     } else
         return 0;

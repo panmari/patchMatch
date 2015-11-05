@@ -14,9 +14,11 @@ public:
     /**
      * May return an empty matrix if the patch to be extracted is not inside the image.
      */
-    cv::Mat extractFrom(const std::vector<cv::Mat> &srcs, const int x, const int y, const int patch_size) const {
+    const cv::Mat extractFrom(const std::vector<cv::Mat> &srcs, const int x, const int y,
+                              const int patch_size, const int scale_change = 1) const {
         const cv::Mat &src = srcs[rotation_idx];
-        cv::Rect roi = cv::Rect(offset.x + x, offset.y + y, patch_size, patch_size);
+        cv::Rect roi = cv::Rect((offset.x + x) * scale_change, (offset.y + y) * scale_change,
+                                patch_size * scale_change, patch_size * scale_change);
         if (roi.x >= 0 && roi.y >= 0 && roi.x + roi.width <= src.cols && roi.y + roi.width <= src.rows)
             return src(roi);
         else

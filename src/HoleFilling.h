@@ -20,7 +20,7 @@ public:
      * Returns a the full image with the hole inpainted. Has the same color space as the image given in construction.
      */
     cv::Mat run();
-    cv::Mat solutionFor(int scale) const;
+    cv::Mat solutionFor(const int scale) const;
 
     std::vector<cv::Mat> _img_pyr, _hole_pyr, _target_area_pyr;
     std::vector<std::shared_ptr<OffsetMap>> _offset_map_pyr;
@@ -28,7 +28,7 @@ public:
     int _nr_scales;
 private:
     const int _patch_size;
-    cv::Mat upscaleSolution(int current_scale) const;
+    cv::Mat upscaleSolution(const int current_scale, const std::vector<cv::Mat> &rotated_sources) const;
     cv::Rect computeTargetRect(const cv::Mat &img, const cv::Mat &hole, int patch_size) const;
 };
 

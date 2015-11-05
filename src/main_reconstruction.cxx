@@ -49,8 +49,8 @@ int main( int argc, char** argv )
     convert_for_computation(source, RESIZE_FACTOR);
     convert_for_computation(target, RESIZE_FACTOR);
 
-    RandomizedPatchMatch rpm(source, target, PATCH_SIZE);
-
+    RandomizedPatchMatch rpm(source, target.size(), PATCH_SIZE);
+    rpm.setTargetArea(target);
     shared_ptr<OffsetMap> offset_map = rpm.match();
 
     TrivialReconstruction tr(offset_map, source, PATCH_SIZE);

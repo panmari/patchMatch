@@ -11,7 +11,7 @@
 class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
-    RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size,
+    RandomizedPatchMatch(const cv::Mat &source, const cv::Size &target_size, int patch_size,
                          float lambda = 0.5f, float min_rotation = -10, float max_rotation = 10,
                          float rotation_step = 5);
     std::shared_ptr<OffsetMap> match() override;
@@ -19,11 +19,12 @@ public:
     /* Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
      * their minimal dimension.
      */
-    int findNumberScales(const cv::Mat &source, const cv::Mat &target, int patch_size) const;
+    int findNumberScales(const cv::Size &source_size, const cv::Size &target_size, int patch_size) const;
 
     void setTargetArea(const cv::Mat &new_target_area);
-    const cv::Mat getSourceGradientX() const { return _source_grad_x_pyr[0]; };
-    const cv::Mat getSourceGradientY() const { return _source_grad_y_pyr[0]; };
+    const std::vector<cv::Mat> getSourcesRotated() const { return _source_rotations_pyr[0]; };
+    const cv::Mat &getSourceGradientX() const { return _source_grad_x_pyr[0]; };
+    const cv::Mat &getSourceGradientY() const { return _source_grad_y_pyr[0]; };
 
     /**
     * Updates 'offset_map_entry' with the given 'candidate_offset' if the patch corresponding to 'candidate_rect' on
@@ -31,6 +32,8 @@ public:
     */
     void updateOffsetMapEntryIfBetter(const cv::Rect &target_patch_rect, const OffsetMapEntry &candidate,
                                       const int scale, OffsetMapEntry *offset_map_entry) const;
+
+
 private:
     std::vector<cv::Mat> _source_pyr, _target_pyr;
 

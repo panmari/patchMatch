@@ -69,9 +69,9 @@ HoleFilling::HoleFilling(const Mat &img, const Mat &hole, int patch_size) : _pat
 }
 
 Mat HoleFilling::run() {
-    // Set the source to full black in hole.
     for (int scale = _nr_scales; scale >= 0; scale--) {
         Mat source = _img_pyr[scale];
+        RandomizedPatchMatch rmp(source, _target_rect_pyr[scale].size(), _patch_size, 0);
         if (scale == _nr_scales) {
             // Make some initial guess, here mean color of whole image.
             // TODO: Do some interpolation of borders for better initial guess.
@@ -85,14 +85,14 @@ Mat HoleFilling::run() {
             initial_guess.setTo(mean_color, _hole_pyr[_nr_scales](low_res_target_rect));
             _target_area_pyr[_nr_scales] = initial_guess;
         } else {
-            Mat upscaled_solution = upscaleSolution(scale);
+            Mat upscaled_solution = upscaleSolution(scale, rmp.getSourcesRotated());
             // Copy upscaled solution at hole region to current target area.
             _target_area_pyr[scale] = source(_target_rect_pyr[scale]).clone();
             // Only copy upscaled solution in hole region.
             Mat hole_mask = _hole_pyr[scale];
             upscaled_solution.copyTo(_target_area_pyr[scale], hole_mask(_target_rect_pyr[scale]));
         }
-        RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size, 0);
+        rmp.setTargetArea(_target_area_pyr[scale]);
         // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
         source.setTo(hole_color, _hole_pyr[scale]);
         for (int i = 0; i < EM_STEPS; i++) {
@@ -110,7 +110,7 @@ Mat HoleFilling::run() {
             Mat reconstructed;
             if (VOTED_MEAN_SHIFT_RECONSTRUCTION) {
                 Mat hole_for_target = _hole_pyr[scale](_target_rect_pyr[scale]);
-                VotedReconstruction vr(_offset_map_pyr[scale], source, hole_for_target, _patch_size);
+                VotedReconstruction vr(_offset_map_pyr[scale], rmp.getSourcesRotated(), hole_for_target, _patch_size);
                 float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / (EM_STEPS - 1);
                 vr.reconstruct(reconstructed, mean_shift_bandwith_scale);
             } else {
@@ -145,7 +145,7 @@ Mat HoleFilling::run() {
     return solutionFor(0);
 }
 
-Mat HoleFilling::upscaleSolution(int current_scale) const {
+Mat HoleFilling::upscaleSolution(const int current_scale, const vector<Mat> &rotated_sources) const {
     Mat upscaled_target_area;
     if (WEXLER_UPSCALE) {
         // Better method for upscaling, see Wexler2007 Section 3.2
@@ -158,7 +158,7 @@ Mat HoleFilling::upscaleSolution(int current_scale) const {
         Rect hole_rect = Rect(prev_target_area_rect.tl() * 2, prev_target_area_rect.size() * 2) &
                 Rect(Point(0,0), _hole_pyr[current_scale].size());
         Mat hole_for_target = _hole_pyr[current_scale](hole_rect);
-        VotedReconstruction vr(previous_offset_map, _img_pyr[current_scale], hole_for_target, _patch_size, 2);
+        VotedReconstruction vr(previous_offset_map, rotated_sources, hole_for_target, _patch_size, 2);
         // TODO: Find out what mean shift scale works best here.
         Mat upscaled_full;
         vr.reconstruct(upscaled_full, 3);
@@ -216,7 +216,7 @@ Rect HoleFilling::computeTargetRect(const Mat &img, const Mat &hole, int patch_s
     return target_rect;
 }
 
-Mat HoleFilling::solutionFor(int scale) const {
+Mat HoleFilling::solutionFor(const int scale) const {
     Mat source = _img_pyr[scale].clone();
     Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
     _target_area_pyr[scale].copyTo(source(_target_rect_pyr[scale]), write_back_mask);

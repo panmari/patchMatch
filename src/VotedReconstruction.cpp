@@ -73,18 +73,19 @@ namespace {
     };
 }
 
-VotedReconstruction::VotedReconstruction(const shared_ptr<OffsetMap> offset_map, const Mat &source,
-                                         const Mat &hole, int patch_size, int scale) :
-        _offset_map(offset_map), _source(source), _hole(hole), _patch_size(patch_size), _scale(scale) {
-    if (scale != 1) {
+VotedReconstruction::VotedReconstruction(const shared_ptr<OffsetMap> offset_map, const vector<Mat> &sources,
+                                         const Mat &hole, int patch_size, int scale_change) :
+        _offset_map(offset_map), _sources(sources), _hole(hole), _patch_size(patch_size), _scale_change(scale_change) {
+    if (scale_change != 1) {
         // Source images need some border for reconstruction if we're using bigger patches.
-        copyMakeBorder(source, _source, 0, 1, 0, 1, cv::BORDER_REFLECT);
+        // TODO: fix this
+        //copyMakeBorder(sources, _source, 0, 1, 0, 1, cv::BORDER_REFLECT);
     }
 }
 
 void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandwith_scale) const {
-    Size reconstructed_size((_offset_map->_width - 1 + _patch_size) * _scale,
-                            (_offset_map->_height - 1 + _patch_size) * _scale);
+    Size reconstructed_size((_offset_map->_width - 1 + _patch_size) * _scale_change,
+                            (_offset_map->_height - 1 + _patch_size) * _scale_change);
     reconstructed = Mat::zeros(reconstructed_size, CV_32FC3);
 
     // Wexler et al suggest using the 75 percentile of the distances as sigma.
@@ -94,13 +95,9 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
     vector<vector<float>> weights(reconstructed_size.width * reconstructed_size.height);
     for (int x = 0; x < _offset_map->_width; x++) {
         for (int y = 0; y < _offset_map->_height; y++) {
-            // Go over all patches that contain this image.
-            const OffsetMapEntry offset_map_entry = _offset_map->at(y, x);
-            const Point offset = offset_map_entry.offset;
-            // Get image data of matching patch
-            Rect matching_patch_rect((x + offset.x) * _scale, (y + offset.y) * _scale,
-                                     _patch_size * _scale, _patch_size * _scale);
-            Mat matching_patch = _source(matching_patch_rect);
+            OffsetMapEntry offset_map_entry = _offset_map->at(y, x);
+            const cv::Mat matching_patch = offset_map_entry.extractFrom(_sources, x, y,
+                                                                        _patch_size, _scale_change);
 
             float weight;
             if (WEIGHTED_BY_SIMILARITY) {
@@ -111,10 +108,10 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
                 weight = 1;
             }
 
-            for (int x_patch = 0; x_patch < _patch_size * _scale; x_patch++) {
-                for (int y_patch = 0; y_patch < _patch_size * _scale; y_patch++) {
-                    int curr_x = x * _scale + x_patch;
-                    int curr_y = y * _scale + y_patch;
+            for (int x_patch = 0; x_patch < _patch_size * _scale_change; x_patch++) {
+                for (int y_patch = 0; y_patch < _patch_size * _scale_change; y_patch++) {
+                    int curr_x = x * _scale_change + x_patch;
+                    int curr_y = y * _scale_change + y_patch;
                     if (_hole.at<uchar>(curr_y, curr_x) > 0) {
                         int idx = curr_x + reconstructed_size.width * curr_y;
                         colors[idx].push_back(matching_patch.at<Vec3f>(y_patch, x_patch));
