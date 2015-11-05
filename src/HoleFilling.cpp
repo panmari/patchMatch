@@ -15,6 +15,8 @@ using cv::pyrUp;
 using cv::Rect;
 using cv::Scalar;
 using cv::threshold;
+using pmutil::computeGradientX;
+using pmutil::computeGradientY;
 using std::vector;
 using std::max_element;
 using std::min_element;
@@ -22,10 +24,11 @@ using std::min_element;
 /**
  * Number of iterations for expectation maximization, in our case reconstruction and building of NNF.
  */
-const int EM_STEPS = 20;
-const bool WEXLER_UPSCALE = true;
-const bool DUMP_INTERMEDIARY_RESULTS = true;
-const bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
+constexpr int EM_STEPS = 20;
+constexpr bool WEXLER_UPSCALE = true;
+constexpr bool DUMP_INTERMEDIARY_RESULTS = true;
+constexpr bool DUMP_UPSCALING_DEBUG_OUTPUT = false;
+constexpr bool VOTED_MEAN_SHIFT_RECONSTRUCTION = true;
 const cv::Vec3f HoleFilling::hole_color = cv::Vec3f(10000, 10000, 10000);
 
 namespace {
@@ -69,8 +72,6 @@ Mat HoleFilling::run() {
     // Set the source to full black in hole.
     for (int scale = _nr_scales; scale >= 0; scale--) {
         Mat source = _img_pyr[scale];
-        // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
-        source.setTo(hole_color, _hole_pyr[scale]);
         if (scale == _nr_scales) {
             // Make some initial guess, here mean color of whole image.
             // TODO: Do some interpolation of borders for better initial guess.
@@ -92,6 +93,8 @@ Mat HoleFilling::run() {
             upscaled_solution.copyTo(_target_area_pyr[scale], hole_mask(_target_rect_pyr[scale]));
         }
         RandomizedPatchMatch rmp(source, _target_area_pyr[scale], _patch_size, 0);
+        // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
+        source.setTo(hole_color, _hole_pyr[scale]);
         for (int i = 0; i < EM_STEPS; i++) {
             if (DUMP_INTERMEDIARY_RESULTS) {
                 double pd = 0;
@@ -105,15 +108,18 @@ Mat HoleFilling::run() {
             }
             _offset_map_pyr[scale] = rmp.match();
             Mat reconstructed;
-            if (true) {
+            if (VOTED_MEAN_SHIFT_RECONSTRUCTION) {
                 Mat hole_for_target = _hole_pyr[scale](_target_rect_pyr[scale]);
                 VotedReconstruction vr(_offset_map_pyr[scale], source, hole_for_target, _patch_size);
                 float mean_shift_bandwith_scale = 3 - i * (3 - 0.2f) / (EM_STEPS - 1);
                 vr.reconstruct(reconstructed, mean_shift_bandwith_scale);
             } else {
-                Mat source_grad_x = rmp.getSourceGradientX();
-                Mat source_grad_y = rmp.getSourceGradientY();
-                VotedGradientReconstruction vr(_offset_map_pyr[scale], source, source_grad_x, source_grad_y,
+                Mat currentSolution = solutionFor(scale);
+                Mat source_grad_x, source_grad_y;
+                computeGradientX(currentSolution, source_grad_x);
+                computeGradientY(currentSolution, source_grad_y);
+
+                VotedGradientReconstruction vr(_offset_map_pyr[scale], currentSolution, source_grad_x, source_grad_y,
                                                _hole_pyr[scale], _patch_size);
                 Mat reconstructed_img, reconstructed_grad_x, reconstructed_grad_y;
                 vr.reconstruct(reconstructed_img, reconstructed_grad_x, reconstructed_grad_y);
@@ -127,10 +133,8 @@ Mat HoleFilling::run() {
                 reconstructed_img.copyTo(target_img, write_back_mask);
                 reconstructed_grad_x.copyTo(target_grad_x, write_back_mask);
                 reconstructed_grad_y.copyTo(target_grad_y, write_back_mask);
-
                 PoissonSolver ps(target_img, target_grad_x, target_grad_y);
-                //ps.solve(reconstructed);
-                reconstructed = reconstructed_img;
+                ps.solve(reconstructed);
             }
             // Set reconstruction as new 'guess', i. e. set target area to current reconstruction.
             Mat write_back_mask = _hole_pyr[scale](_target_rect_pyr[scale]);
