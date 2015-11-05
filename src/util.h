@@ -13,14 +13,17 @@
 namespace pmutil {
 
     using boost::format;
+    using cv::getRotationMatrix2D;
     using cv::imwrite;
     using cv::Mat;
     using cv::Matx;
+    using cv::Point2f;
     using cv::Rect;
     using cv::Scalar;
     using cv::Size;
     using cv::String;
     using cv::Vec3f;
+    using cv::warpAffine;
 
     /**
      * Computes the sum of squared differences of the two given matrices/images. Assumes that they have the same size
@@ -186,6 +189,17 @@ namespace pmutil {
         }
     }
 
+    static std::vector<Mat> createRotatedImages(const cv::Mat src, float min_rotation, float max_rotation,
+                                                float rotation_step) {
+        std::vector<Mat> out;
+        for (float rot = min_rotation; rot <= max_rotation; rot += rotation_step) {
+            Mat rotation_matrix = getRotationMatrix2D(Point2f(src.cols / 2.f, src.rows / 2.f), rot, 1);
+            Mat rotated;
+            warpAffine(src, rotated, rotation_matrix, src.size(), cv::INTER_AREA);
+            out.push_back(rotated);
+        }
+        return out;
+    }
 }
 
 #endif //PATCHMATCH_UTIL_H

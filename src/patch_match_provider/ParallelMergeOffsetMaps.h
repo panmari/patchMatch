@@ -28,9 +28,12 @@ public:
         Size sz(_patch_size, _patch_size);
         for (int x = r.start; x < r.end; x++) {
             for (int y = 0; y < _other_offset_map._height; y++) {
-                Point other_offset = _other_offset_map.at(y, x).offset * _scale_difference;
+                OffsetMapEntry other_offset = _other_offset_map.at(y, x);
+                other_offset.offset *= _scale_difference;
+
                 Point offset_map_at(x * _scale_difference, y * _scale_difference);
                 Rect target_patch_rect(offset_map_at, sz);
+
                 OffsetMapEntry *current_offset = _offset_map.ptr(y * _scale_difference,
                                                                  x * _scale_difference);
                 _rmp.updateOffsetMapEntryIfBetter(target_patch_rect, other_offset, _current_scale, current_offset);

@@ -141,8 +141,34 @@ TEST(performance_test, ssd_methods) {
 		// Check for equality of methods.
 		float relative_allowed_error = 0.0001f;
 		float absolute_allowed_error = ssd1 * relative_allowed_error;
-		
+
 		EXPECT_NEAR(ssd1, ssd4, absolute_allowed_error);
 		EXPECT_NEAR(ssd1, ssd2, absolute_allowed_error);
 	}
+}
+
+TEST(performance_test, extract_rectangle_methods) {
+    vector<Size> sizes{ Size(5, 5), Size(7, 7), Size(10, 10), Size(20, 20), Size(50, 50) };
+    theRNG().state = 100;
+    cout << "Size \t\tMethod 1 \tMethod 2 \tMethod 3" << endl;
+    Size full_size(1000, 1000);
+    Mat full_mat1(full_size, CV_32FC3);
+    randu(full_mat1, 0.0, 1.0);
+
+    for (int is = 0; is < sizes.size(); ++is) {
+        Size sz = sizes[is];
+        // Method 1
+        double tic1 = double(getTickCount());
+        Rect extracted_rect(Point(500, 500), sz);
+        Mat mat1 = full_mat1(extracted_rect);
+        double toc1 = (double(getTickCount() - tic1)) * 1000. / getTickFrequency();
+
+        // Method 2
+        double tic2 = double(getTickCount());
+        Mat mat2;
+        getRectSubPix(mat1, sz, Point(500, 500), mat2);
+        double toc2 = (double(getTickCount() - tic2)) * 1000. / getTickFrequency();
+
+        cout << sz << " \t" << toc1 << " \t" << toc2 << endl;
+    }
 }

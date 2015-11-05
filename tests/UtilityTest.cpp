@@ -2,8 +2,11 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "../src/util.h"
 
+using cv::Mat;
+using cv::Rect;
 using cv::Vec3f;
 using pmutil::naiveMeanShift;
+using pmutil::createRotatedImages;
 using std::vector;
 
 TEST(utility_test, naive_mean_shift_with_only_one_color)
@@ -93,4 +96,16 @@ TEST(utility_test, std_method_test)
     // This computes population standard deviation, so we divide by N, not N - 1.
     float expected_std = sqrtf((powf(35 - 20, 2) + powf(35 - 50, 2)) / 2);
     EXPECT_EQ(cv::Scalar(expected_std, expected_std, expected_std), std);
+}
+
+TEST(utility_test, create_rotated_test)
+{
+    Mat src = Mat::ones(100, 100, CV_32FC1);
+    src(Rect(40, 40, 10, 10)) = 0.5;
+    auto rotated_srcs = createRotatedImages(src, 0, 10, 10);
+    ASSERT_EQ(2, rotated_srcs.size());
+    for (int i = 0; i < rotated_srcs.size(); i++) {
+        std::string filename = "rotated" + std::to_string(i) + ".exr";
+        cv::imwrite(filename, rotated_srcs[i]);
+    }
 }

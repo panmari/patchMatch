@@ -7,6 +7,7 @@
 using cv::addWeighted;
 using cv::buildPyramid;
 using cv::flip;
+using cv::getRotationMatrix2D;
 using cv::Mat;
 using cv::Point;
 using cv::Range;
@@ -16,9 +17,10 @@ using cv::Scalar;
 using cv::Size;
 using cv::String;
 using cv::Vec3f;
-using pmutil::ssd_unsafe;
+using pmutil::createRotatedImages;
 using pmutil::computeGradientX;
 using pmutil::computeGradientY;
+using pmutil::ssd_unsafe;
 using std::max;
 using std::shared_ptr;
 
@@ -34,11 +36,14 @@ constexpr bool MULTIPLE_SCALES = false;
 constexpr bool MERGE_UPSAMPLED_OFFSETS = true;
 constexpr float ALPHA = 0.5; // Used to modify random search radius. Higher alpha means more random searches.
 
-RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda) :
+RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda,
+                                           float min_rotation, float max_rotation, float rotation_step) :
         _patch_size(patch_size), _max_search_radius(max(target.cols, target.rows)),
         _nr_scales(findNumberScales(source, target, patch_size)), _lambda(lambda) {
     buildPyramid(source, _source_pyr, _nr_scales);
-    for (Mat scaled_source: _source_pyr) {
+    for (int i = 0; i <= _nr_scales; i++) {
+        Mat scaled_source = _source_pyr[i];
+        _source_rotations_pyr.push_back(createRotatedImages(scaled_source, min_rotation, max_rotation, rotation_step));
         _source_rect_pyr.push_back(Rect(Point(0,0), scaled_source.size()));
         Mat gx;
         computeGradientX(scaled_source, gx);
@@ -97,7 +102,6 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
                     OffsetMapEntry *offset_map_entry = offset_map->ptr(y, x);
 
                     // If image is flipped, we need to get x and y coordinates unflipped for getting the right offset.
-                    // TODO: Handle the flipping better now that offset_map is a custom class.
                     int x_unflipped, y_unflipped;
                     if (offset_map->isFlipped()) {
                         x_unflipped = offset_map->_width - 1 - x;
@@ -111,11 +115,11 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
                     // Propagate step, try offsets of neighboring entries for this one, apply if better.
                     if (x > 0) {
                         OffsetMapEntry offsetLeft = offset_map->at(y, x - 1);
-                        updateOffsetMapEntryIfBetter(target_patch_rect, offsetLeft.offset, scale, offset_map_entry);
+                        updateOffsetMapEntryIfBetter(target_patch_rect, offsetLeft, scale, offset_map_entry);
                     }
                     if (y > 0) {
                         OffsetMapEntry offsetUp = offset_map->at(y - 1, x);
-                        updateOffsetMapEntryIfBetter(target_patch_rect, offsetUp.offset, scale, offset_map_entry);
+                        updateOffsetMapEntryIfBetter(target_patch_rect, offsetUp, scale, offset_map_entry);
                     }
 
                     // Random search step, try out various locations all over the image that could be better.
@@ -123,11 +127,12 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
                         Point current_offset = offset_map_entry->offset;
                         float current_search_radius = _max_search_radius;
                         while (current_search_radius > 1) {
+                            OffsetMapEntry random;
                             Point random_point = Point(cvRound(rng.uniform(-1.f, 1.f) * current_search_radius),
                                                        cvRound(rng.uniform(-1.f, 1.f) * current_search_radius));
-                            Point random_offset = current_offset + random_point;
-
-                            updateOffsetMapEntryIfBetter(target_patch_rect, random_offset, scale, offset_map_entry);
+                            random.offset = current_offset + random_point;
+                            random.rotation_idx = rng.uniform(0, _source_rotations_pyr[0].size());
+                            updateOffsetMapEntryIfBetter(target_patch_rect, random, scale, offset_map_entry);
 
                             current_search_radius *= ALPHA;
                         }
@@ -149,18 +154,19 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
     return _previous_solution;
 }
 
-void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_patch_rect, const Point &candidate_offset,
+void RandomizedPatchMatch::updateOffsetMapEntryIfBetter(const Rect &target_patch_rect,
+                                                        const OffsetMapEntry &candidate_entry,
                                                         const int scale, OffsetMapEntry *offset_map_entry) const {
-    // Check if it's fully inside, only try to update then.
-    const Rect candidate_rect(target_patch_rect.tl() + candidate_offset,
-                              Size(_patch_size, _patch_size));
-    if ((_source_rect_pyr[scale] & candidate_rect) == candidate_rect) {
-        float previous_distance = offset_map_entry->distance;
-		float ssd_value = patchDistance(candidate_rect, target_patch_rect, scale, previous_distance);
-        if (ssd_value < previous_distance) {
-            offset_map_entry->offset = candidate_offset;
-            offset_map_entry->distance = ssd_value;
-        }
+    const Mat candidate_patch = candidate_entry.extractFrom(_source_rotations_pyr[scale],
+                                                            target_patch_rect.x, target_patch_rect.y, _patch_size);
+    // If candidate patch was not inside image, return immediately.
+    if (candidate_patch.empty())
+        return;
+    const Mat target_patch = _target_pyr[scale](target_patch_rect);
+    float previous_distance = offset_map_entry->distance;
+    float ssd_value = static_cast<float>(ssd_unsafe(candidate_patch, target_patch, previous_distance));
+    if (ssd_value < previous_distance) {
+        offset_map_entry->merge(candidate_entry, ssd_value);
     }
 }
 

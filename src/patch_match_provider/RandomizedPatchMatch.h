@@ -11,7 +11,9 @@
 class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
-    RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size, float lambda = 0.5f);
+    RandomizedPatchMatch(const cv::Mat &source, const cv::Mat &target, int patch_size,
+                         float lambda = 0.5f, float min_rotation = -10, float max_rotation = 10,
+                         float rotation_step = 5);
     std::shared_ptr<OffsetMap> match() override;
 
     /* Finds number of scales. At minimum scale, both source & target should still be larger than 2 * patch_size in
@@ -27,7 +29,7 @@ public:
     * Updates 'offset_map_entry' with the given 'candidate_offset' if the patch corresponding to 'candidate_rect' on
     * 'source_img' is a better match than for the given 'patch'.
     */
-    void updateOffsetMapEntryIfBetter(const cv::Rect &target_patch_rect, const cv::Point &candidate_offset,
+    void updateOffsetMapEntryIfBetter(const cv::Rect &target_patch_rect, const OffsetMapEntry &candidate,
                                       const int scale, OffsetMapEntry *offset_map_entry) const;
 private:
     std::vector<cv::Mat> _source_pyr, _target_pyr;
@@ -36,6 +38,7 @@ private:
      * Gradients
      */
     std::vector<cv::Mat> _source_grad_x_pyr, _source_grad_y_pyr, _target_grad_x_pyr, _target_grad_y_pyr;
+    std::vector<std::vector<cv::Mat>> _source_rotations_pyr;
     std::vector<cv::Rect> _source_rect_pyr;
     const int _patch_size, _max_search_radius;
     // Minimum size image in pyramid is 2x patchSize of lower dimension (or larger).
