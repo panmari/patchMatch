@@ -46,14 +46,13 @@ public:
 
 
 private:
-    std::vector<cv::Mat> _source_pyr, _target_pyr;
+    std::vector<cv::Mat> _target_pyr;
 
     /**
      * Gradients
      */
     std::vector<cv::Mat> _source_grad_x_pyr, _source_grad_y_pyr, _target_grad_x_pyr, _target_grad_y_pyr;
     std::vector<std::vector<cv::Mat>> _source_rotations_pyr;
-    std::vector<cv::Rect> _source_rect_pyr;
     const int _patch_size, _max_search_radius;
     // Minimum size image in pyramid is 2x patchSize of lower dimension (or larger).
     const int _nr_scales;
@@ -76,7 +75,7 @@ private:
      * Every entry at offset_map is set to a random & valid (i. e. patch it's pointing to is inside image) offset.
      * Also the corresponding SSD is computed.
      */
-    void initializeWithRandomOffsets(const cv::Mat &target_img, const cv::Mat &source_img, const int scale,
+    void initializeWithRandomOffsets(const cv::Size &source_size, const int scale,
                                      OffsetMap *offset_map, unsigned int random_seed = 42) const;
 
     /**

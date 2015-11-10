@@ -8,7 +8,7 @@ class OffsetMapEntry {
 public:
     cv::Point offset;
     float distance;
-    int rotation_idx;
+    unsigned int rotation_idx;
     // TODO: add more attributes like rotation, gain, bias etc.
 
     /**

@@ -23,6 +23,7 @@ using pmutil::computeGradientY;
 using pmutil::ssd_unsafe;
 using std::max;
 using std::shared_ptr;
+using std::vector;
 
 /**
  * Number times propagation/random_search is executed for every patch per iteration.
@@ -40,11 +41,11 @@ RandomizedPatchMatch::RandomizedPatchMatch(const cv::Mat &source, const cv::Size
                                            float lambda, float min_rotation, float max_rotation, float rotation_step) :
         _patch_size(patch_size), _max_search_radius(max(source.cols, source.rows)),
         _nr_scales(findNumberScales(source.size(), target_size, patch_size)), _lambda(lambda) {
-    buildPyramid(source, _source_pyr, _nr_scales);
+    vector<Mat> source_pyr;
+    buildPyramid(source, source_pyr, _nr_scales);
     for (int i = 0; i <= _nr_scales; i++) {
-        Mat scaled_source = _source_pyr[i];
+        Mat scaled_source = source_pyr[i];
         _source_rotations_pyr.push_back(createRotatedImages(scaled_source, min_rotation, max_rotation, rotation_step));
-        _source_rect_pyr.push_back(Rect(Point(0,0), scaled_source.size()));
         Mat gx;
         computeGradientX(scaled_source, gx);
         _source_grad_x_pyr.push_back(gx);
@@ -60,13 +61,12 @@ shared_ptr<OffsetMap> RandomizedPatchMatch::match() {
     // Initialize with dummy offset map that will be deleted at the end of first iteration.
     OffsetMap *previous_scale_offset_map = new OffsetMap(0, 0);
     for (int scale = _nr_scales; scale >= 0; scale--) {
-        Mat source = _source_pyr[scale];
         Mat target = _target_pyr[scale];
         const int width = target.cols - _patch_size + 1;
         const int height = target.rows - _patch_size + 1;
         OffsetMap *offset_map = new OffsetMap(width, height);
         unsigned int random_seed = static_cast<unsigned int>(target.rows * target.cols + _target_updated_count);
-        initializeWithRandomOffsets(source, target, scale, offset_map, random_seed);
+        initializeWithRandomOffsets(_source_rotations_pyr[scale][0].size(), scale, offset_map, random_seed);
 
         for (int i = 0; i < ITERATIONS_PER_SCALE; i++) {
             // After half the iterations, merge the lower resolution offset where they're better.
@@ -185,23 +185,26 @@ void RandomizedPatchMatch::setTargetArea(const cv::Mat &new_target_area) {
 }
 
 
-void RandomizedPatchMatch::initializeWithRandomOffsets(const Mat &source_img, const Mat &target_img, const int scale,
+void RandomizedPatchMatch::initializeWithRandomOffsets(const Size &source_size, const int scale,
                                                        OffsetMap *offset_map, unsigned int random_seed) const {
     // Seed random generator to have reproducable results.
+    const Mat &target = _target_pyr[scale];
     srand(random_seed);
     for (int x = 0; x < offset_map->_width; x++) {
         for (int y = 0; y < offset_map->_height; y++) {
             // Choose offset carefully, so resulting point (when added to current coordinate), is not outside image.
-            int randomX = (rand() % (source_img.cols - _patch_size)) - x;
-            int randomY = (rand() % (source_img.rows - _patch_size)) - y;
+            int randomX = (rand() % (source_size.width - _patch_size)) - x;
+            int randomY = (rand() % (source_size.height - _patch_size)) - y;
 
-            Rect current_patch_rect(x, y, _patch_size, _patch_size);
-            Rect random_rect = Rect(x + randomX, y + randomY, _patch_size, _patch_size);
-			float inital_dist = patchDistance(random_rect, current_patch_rect, scale);
             auto entry = offset_map->ptr(y, x);
             entry->offset = Point(randomX, randomY);
-            entry->distance = inital_dist;
-            entry->rotation_idx = rand() % _source_rotations_pyr[scale].size();
+            entry->rotation_idx = static_cast<unsigned int>(rand() % _source_rotations_pyr[scale].size());
+
+            Rect current_patch_rect(x, y, _patch_size, _patch_size);
+            const Mat target_patch = target(current_patch_rect);
+            const Mat initial_patch = entry->extractFrom(_source_rotations_pyr[scale], x, y, _patch_size);
+            // TODO: use helper for this.
+            entry->distance = static_cast<float>(ssd_unsafe(target_patch, initial_patch));
         }
     }
 }
@@ -217,6 +220,8 @@ int RandomizedPatchMatch::findNumberScales(const Size &source_size, const Size &
 
 float RandomizedPatchMatch::patchDistance(const Rect &source_rect, const Rect &target_rect, const int scale,
                                           const float previous_dist) const {
+    // TODO: reintroduce this helper.
+    /*
     Mat source_patch = _source_pyr[scale](source_rect);
     Mat target_patch = _target_pyr[scale](target_rect);
     double ssd = ssd_unsafe(source_patch, target_patch, previous_dist);
@@ -239,4 +244,6 @@ float RandomizedPatchMatch::patchDistance(const Rect &source_rect, const Rect &t
     ssd += ssd_grad_y * _lambda;
 
     return static_cast<float>(ssd);
+     */
+    return 0;
 }
