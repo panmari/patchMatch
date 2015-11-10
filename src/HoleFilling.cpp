@@ -71,6 +71,8 @@ HoleFilling::HoleFilling(const Mat &img, const Mat &hole, int patch_size) : _pat
 Mat HoleFilling::run() {
     for (int scale = _nr_scales; scale >= 0; scale--) {
         Mat source = _img_pyr[scale];
+        // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
+        source.setTo(hole_color, _hole_pyr[scale]);
         RandomizedPatchMatch rmp(source, _target_rect_pyr[scale].size(), _patch_size, 0);
         if (scale == _nr_scales) {
             // Make some initial guess, here mean color of whole image.
@@ -93,8 +95,6 @@ Mat HoleFilling::run() {
             upscaled_solution.copyTo(_target_area_pyr[scale], hole_mask(_target_rect_pyr[scale]));
         }
         rmp.setTargetArea(_target_area_pyr[scale]);
-        // Set 'hole' in source, so we will not get trivial solution (i. e. hole is filled with hole).
-        source.setTo(hole_color, _hole_pyr[scale]);
         for (int i = 0; i < EM_STEPS; i++) {
             if (DUMP_INTERMEDIARY_RESULTS) {
                 double pd = 0;
