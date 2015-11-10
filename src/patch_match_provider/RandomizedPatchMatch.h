@@ -11,6 +11,17 @@
 class RandomizedPatchMatch : public PatchMatchProvider {
 
 public:
+    /**
+     * Constructs all things necessary to execute randomized patch match on the given source image. The target image
+     * has to be set via setTargetArea before calling the match() which does the actual patch matching.
+     * Additional to translation, also rotated versions of the image will be inspected.
+     *
+     * @param min_rotation the minimal rotation inspected
+     * @param max_rotation the maximal rotation inspected
+     * @param rotation_step decides the number of rotations considered. Will construct rotated versions of the image
+     * until min_rotation + i*rotation_step > max_rotation.
+     * You are advised to choose min_rotation and rotation_step so that the rotation by 0 degrees is also included.
+     */
     RandomizedPatchMatch(const cv::Mat &source, const cv::Size &target_size, int patch_size,
                          float lambda = 0.5f, float min_rotation = -10, float max_rotation = 10,
                          float rotation_step = 5);
