@@ -78,8 +78,8 @@ VotedReconstruction::VotedReconstruction(const shared_ptr<OffsetMap> offset_map,
         _offset_map(offset_map), _sources(sources), _hole(hole), _patch_size(patch_size), _scale_change(scale_change) {
     if (scale_change != 1) {
         // Source images need some border for reconstruction if we're using bigger patches.
-        // TODO: fix this
-        //copyMakeBorder(sources, _source, 0, 1, 0, 1, cv::BORDER_REFLECT);
+        for (Mat &source: _sources)
+            copyMakeBorder(source, source, 0, 1, 0, 1, cv::BORDER_REFLECT);
     }
 }
 
