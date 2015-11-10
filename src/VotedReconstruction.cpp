@@ -75,7 +75,9 @@ namespace {
 
 VotedReconstruction::VotedReconstruction(const shared_ptr<OffsetMap> offset_map, const vector<Mat> &sources,
                                          const Mat &hole, int patch_size, int scale_change) :
-        _offset_map(offset_map), _sources(sources), _hole(hole), _patch_size(patch_size), _scale_change(scale_change) {
+        _offset_map(offset_map), _sources(sources), _hole(hole), _patch_size(patch_size), _scale_change(scale_change),
+        _reconstructed_size((_offset_map->_width - 1 + _patch_size) * _scale_change,
+                            (_offset_map->_height - 1 + _patch_size) * _scale_change) {
     if (scale_change != 1) {
         // Source images need some border for reconstruction if we're using bigger patches.
         for (Mat &source: _sources)
@@ -84,15 +86,12 @@ VotedReconstruction::VotedReconstruction(const shared_ptr<OffsetMap> offset_map,
 }
 
 void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandwith_scale) const {
-    Size reconstructed_size((_offset_map->_width - 1 + _patch_size) * _scale_change,
-                            (_offset_map->_height - 1 + _patch_size) * _scale_change);
-    reconstructed = Mat::zeros(reconstructed_size, CV_32FC3);
-
+    reconstructed = Mat::zeros(_reconstructed_size, CV_32FC3);
     // Wexler et al suggest using the 75 percentile of the distances as sigma.
     const float sigma = _offset_map->get75PercentileDistance();
     const float two_sigma_sqr = sigma * sigma * 2;
-    vector<vector<Vec3f>> colors(reconstructed_size.width * reconstructed_size.height);
-    vector<vector<float>> weights(reconstructed_size.width * reconstructed_size.height);
+    vector<vector<Vec3f>> colors(_reconstructed_size.width * _reconstructed_size.height);
+    vector<vector<float>> weights(_reconstructed_size.width * _reconstructed_size.height);
     for (int x = 0; x < _offset_map->_width; x++) {
         for (int y = 0; y < _offset_map->_height; y++) {
             OffsetMapEntry offset_map_entry = _offset_map->at(y, x);
@@ -113,7 +112,7 @@ void VotedReconstruction::reconstruct(Mat &reconstructed, float mean_shift_bandw
                     int curr_x = x * _scale_change + x_patch;
                     int curr_y = y * _scale_change + y_patch;
                     if (_hole.at<uchar>(curr_y, curr_x) > 0) {
-                        int idx = curr_x + reconstructed_size.width * curr_y;
+                        int idx = curr_x + _reconstructed_size.width * curr_y;
                         colors[idx].push_back(matching_patch.at<Vec3f>(y_patch, x_patch));
                         weights[idx].push_back(weight);
                     }

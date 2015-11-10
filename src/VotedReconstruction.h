@@ -23,7 +23,7 @@ private:
     const cv::Mat _hole;
     const std::shared_ptr<OffsetMap> _offset_map;
     const int _patch_size, _scale_change;
-
+    const cv::Size _reconstructed_size;
 };
 
 
