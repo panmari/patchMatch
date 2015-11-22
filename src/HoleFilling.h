@@ -28,7 +28,8 @@ public:
     int _nr_scales;
 private:
     const int _patch_size;
-    cv::Mat upscaleSolution(const int current_scale, const std::vector<cv::Mat> &rotated_sources) const;
+    void upscaleSolution(const int current_scale, const std::vector<cv::Mat> &rotated_sources,
+                            cv::Mat &upscaled_solution) const;
     cv::Rect computeTargetRect(const cv::Mat &img, const cv::Mat &hole, int patch_size) const;
 };
 

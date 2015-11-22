@@ -87,7 +87,8 @@ Mat HoleFilling::run() {
             initial_guess.setTo(mean_color, _hole_pyr[_nr_scales](low_res_target_rect));
             _target_area_pyr[_nr_scales] = initial_guess;
         } else {
-            Mat upscaled_solution = upscaleSolution(scale, rmp.getSourcesRotated());
+            Mat upscaled_solution;
+            upscaleSolution(scale, rmp.getSourcesRotated(), upscaled_solution);
             // Copy upscaled solution at hole region to current target area.
             _target_area_pyr[scale] = source(_target_rect_pyr[scale]).clone();
             // Only copy upscaled solution in hole region.
@@ -145,8 +146,8 @@ Mat HoleFilling::run() {
     return solutionFor(0);
 }
 
-Mat HoleFilling::upscaleSolution(const int current_scale, const vector<Mat> &rotated_sources) const {
-    Mat upscaled_target_area;
+void HoleFilling::upscaleSolution(const int current_scale, const vector<Mat> &rotated_sources,
+                                 Mat &upscaled_solution) const {
     if (WEXLER_UPSCALE) {
         // Better method for upscaling, see Wexler2007 Section 3.2
         int previous_scale = current_scale + 1;
@@ -174,7 +175,7 @@ Mat HoleFilling::upscaleSolution(const int current_scale, const vector<Mat> &rot
             copyMakeBorder(upscaled_full, upscaled_full, 0, 2, 0, 2, cv::BORDER_REFLECT);
         }
 
-        upscaled_target_area = upscaled_full(cutout_rect);
+        upscaled_solution = upscaled_full(cutout_rect);
 
         if (DUMP_UPSCALING_DEBUG_OUTPUT) {
             Mat source = _img_pyr[current_scale].clone();
@@ -187,16 +188,15 @@ Mat HoleFilling::upscaleSolution(const int current_scale, const vector<Mat> &rot
 
             cv::imwrite("wexler_upscaled" + std::to_string(current_scale) + "_hole.exr", hole_for_target);
             pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_full.exr", upscaled_full);
-            pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_target_area);
+            pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + ".exr", upscaled_solution);
             pmutil::imwrite_lab("wexler_upscaled" + std::to_string(current_scale) + "_target_area_in_img.exr", source);
         }
     } else {
         Mat previous_solution = solutionFor(current_scale + 1);
         Mat upscaled_solution;
         pyrUp(previous_solution, upscaled_solution);
-        upscaled_target_area = upscaled_solution(_target_rect_pyr[current_scale]);
+        upscaled_solution = upscaled_solution(_target_rect_pyr[current_scale]);
     }
-    return upscaled_target_area;
 }
 
 Rect HoleFilling::computeTargetRect(const Mat &img, const Mat &hole, int patch_size) const {
