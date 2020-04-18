@@ -1,6 +1,7 @@
-#include "opencv2/ts.hpp"
+#include "gtest/gtest.h"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "../src/util.h"
+
 
 using namespace std;
 using namespace cv;

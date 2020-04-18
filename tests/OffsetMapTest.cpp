@@ -1,4 +1,4 @@
-#include "opencv2/ts.hpp"
+#include "gtest/gtest.h"
 #include "../src/OffsetMap.h"
 
 TEST(offset_map_test, flipping_should_work_on_square_image)

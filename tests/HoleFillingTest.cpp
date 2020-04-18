@@ -1,4 +1,4 @@
-#include "opencv2/ts.hpp"
+#include "gtest/gtest.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "../src/HoleFilling.h"
